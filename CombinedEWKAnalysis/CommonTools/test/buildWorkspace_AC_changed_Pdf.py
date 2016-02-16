@@ -145,7 +145,7 @@ else:
 
 NSigBkg_corr_unc_int=0
 
-basepath = '%s/src/CombinedEWKAnalysis/CommonTools/data/anomalousCoupling'%os.environ['CMSSW_BASE']
+basepath = '%s/src/aTGC-Signal-Analysis/CombinedEWKAnalysis/CommonTools/data/anomalousCoupling'%os.environ['CMSSW_BASE']
 
 
 for section in fit_sections:
@@ -156,6 +156,7 @@ for section in fit_sections:
     if check_channel.Contains("_mu"):
       ch_name = "mu"
     #@#
+
     codename = section
     lType = codename
     f = TFile('%s/%s.root'%(basepath,codename))
@@ -163,6 +164,8 @@ for section in fit_sections:
     #@#get old workspace4limit_ and rename rrv_mass_lvj
     oldWS = f.Get("workspace_of_bkg_%s"%ch_name)
     old_obs = oldWS.var("rrv_mass_lvj")
+    old_obs.setVal(1000)
+    old_obs.setRange(700,3500)
     old_obs.SetName("observable_%s"%codename)
     #@#
     Nbkg = cfg.get(codename,'Nbkg')
@@ -176,23 +179,20 @@ for section in fit_sections:
     background = []
 
     for i in range(0,Nbkg_int):
-        background.append(f.Get(bkg_name[i]))
-
-
-#@#5
+        background.append(oldWS.pdf(bkg_name[i]))
 
 
     data_obs = f.Get('data_obs')
 
-    fileSig = TFile.Open("ATGC_Pdf.root")
-    aTGCPdf = fileSig.Get('aTGC-model')
+    aTGCPdf = oldWS.pdf("aTGC-model")
+    aTGCPdf.Print()
     aTGCPdf.SetName("ATGCPdf_%s"%codename)
     norm_sig_sm = oldWS.var("rate_VV_xww_for_unbin").getVal()
 
     doSignalShape_unc=False
     doSignalBkg_corr_unc=False
     cfg_items=cfg.items(codename)
-#@#1
+
 
 # check if shape uncertainty name is one of those where Signal and bkg uncertainties are correlated
     def isItCorrelated(name):
@@ -211,8 +211,6 @@ for section in fit_sections:
 
     
     #@#
-
-
     norm_bkg = []
     for i in range(0,Nbkg_int):
         norm_bkg.append(oldWS.var("rate_%s_xww_for_unbin"%bkg_name[i]).getVal())
@@ -257,24 +255,12 @@ for section in fit_sections:
 
     data 	= RooDataHist('data_obs', 'data_obs_proc_%s'%codename, vars, data_obs)
     print 'data integral: ',data.Print()
-#@#6
- 
-    
 
-#@#2   
-
-
-#@#3
-
-   
-#@#4
-  
     
     getattr(theWS, 'import')(data)
     for i in range(0,Nbkg_int):
         getattr(theWS, 'import')(bkgFits[i])
-    
-#@#7
+
     getattr(theWS, 'import')(aTGCPdf)
 
     theWS.Print()
@@ -352,8 +338,6 @@ rate                        {norm_sig_sm}\t""".format(codename=codename,norm_sig
                 else:
                     card+="""\t\t\t\t-"""
 
-################ bkg shape syst:
-#@#8
 
     print card
 
