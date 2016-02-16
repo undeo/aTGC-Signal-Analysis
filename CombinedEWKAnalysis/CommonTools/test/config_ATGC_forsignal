@@ -1,0 +1,41 @@
+[Global]
+# name of observable branch in input TTree
+obsVar = m_lvj
+# bins of observable you want to use for the fit
+obsBins = 700, 915, 1130, 1345, 1560, 1775, 1990, 2205, 2420, 2635, 2850, 3065, 3280, 3495, 3710, 3925, 4140, 4355, 4570, 4785, 5000
+# name of weight branch in input TTree
+signal_weight_var=weight
+# number of generated grid points in input TTree
+nGridPar1Bins = 3
+#nGridPar2Bins = 3
+# min and max values of generated grid points in input TTree
+par1GridMax =  12
+par1GridMin = -12
+#par2GridMax =  20
+#par2GridMin = -20
+# function you want to fit on yield in every observable bin
+function=[0] + [1]*x + [2]*x*x
+#function=[0] + [1]*x + [2]*y + [3]*x*y + [4]*x*x + [5]*y*y
+# model you want to use
+model=par1_TF1
+#model=par1par2_TF2
+# name of parameter branches in input TTree
+par1Name = c_wwwl_grid
+#par2Name = c_wl_grid
+
+# channels
+[ch_ele]
+obsVar = m_lvj
+obsBins = 700, 915, 1130, 1345, 1560, 1775, 1990, 2205, 2420, 2635, 2850, 3065, 3280, 3495, 3710, 3925, 4140, 4355, 4570, 4785, 5000
+# input root file and TTree name
+signal_model = WW-aTGC-ele-inputfile.root:BasicTree
+
+
+[ch_mu]
+obsVar = m_lvj
+obsBins = 700, 915, 1130, 1345, 1560, 1775, 1990, 2205, 2420, 2635, 2850, 3065, 3280, 3495, 3710, 3925, 4140, 4355, 4570, 4785, 5000
+# input root file and TTree name
+signal_model = WW-aTGC-mu-inputfile.root:BasicTree
+
+
+
