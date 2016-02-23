@@ -5,17 +5,17 @@ gSystem.Load("/afs/cern.ch/work/c/crenner/CMSSW_7_1_5/lib/slc6_amd64_gcc481/libH
 
 from ROOT import RooErfExpPdf, RooAlpha, RooAlpha4ErfPowPdf, RooAlpha4ErfPow2Pdf, RooAlpha4ErfPowExpPdf, RooPowPdf, RooPow2Pdf, RooErfPowExpPdf, RooErfPowPdf, RooErfPow2Pdf, RooQCDPdf, RooUser1Pdf, RooBWRunPdf, RooAnaExpNPdf, RooExpNPdf, RooAlpha4ExpNPdf, RooExpTailPdf, RooAlpha4ExpTailPdf, Roo2ExpPdf, RooAlpha42ExpPdf
 
-def make_SMBKG_input(ch = "ele", POIs = ["c_www"], oldtrees = 0):
-
+def make_SMBKG_input(ch = "ele", POIs = ["cwww"], oldtrees = 0):
+	do_plot		= 0
 	nbins4fit	= 20
 	binlo		= 1000
 	binhi		= 3500
 	#read bkg
 	fileInWS	= TFile.Open("Input/wwlvj_BulkG_WW_lvjj_M800_%s_HPW_workspace.root"%(ch))
 	w		= fileInWS.Get("workspace4limit_") 
-	singletop	= w.pdf("STop_xww_%s_HPW"%(ch[:2]))
-	ttbar		= w.pdf("TTbar_xww_%s_HPW"%(ch[:2]))
-	wjets		= w.pdf("WJets_xww_%s_HPW"%(ch[:2]))
+	w.pdf("STop_xww_%s_HPW"%(ch[:2])).SetName("STop")
+	w.pdf("TTbar_xww_%s_HPW"%(ch[:2])).SetName("TTbar")
+	w.pdf("WJets_xww_%s_HPW"%(ch[:2])).SetName("WJets")
 	rrv_mass_lvj	= w.var("rrv_mass_lvj")
 	rrv_mass_lvj.setRange(binlo,binhi) 
 	#read data
@@ -54,21 +54,21 @@ def make_SMBKG_input(ch = "ele", POIs = ["c_www"], oldtrees = 0):
 			c_bl[0]		= 0
 			weight[0]	= treeInATGC.aTGCWeights[7] * weight_part
 			treeATGC.Fill()
-			if "c_www" in POIs:
+			if "cwww" in POIs:
 				c_wwwl[0] = 12; c_wl[0]	= 0; c_bl[0] = 0;
 				weight[0] = treeInATGC.aTGCWeights[0] * weight_part
 				treeATGC.Fill()
 				c_wwwl[0] = -12; c_wl[0] = 0; c_bl[0] = 0;
 				weight[0] = treeInATGC.aTGCWeights[1] * weight_part
 				treeATGC.Fill()
-			if "c_w" in POIs:
+			if "cw" in POIs:
 				c_wwwl[0] = 0; c_wl[0] = 20; c_bl[0] = 0;
 				weight[0] = treeInATGC.aTGCWeights[2] * weight_part
 				treeATGC.Fill()
 				c_wwwl[0] = 0; c_wl[0] = -20; c_bl[0] = 0;
 				weight[0] = treeInATGC.aTGCWeights[3] * weight_part
 				treeATGC.Fill()
-			if "c_b" in POIs:
+			if "cb" in POIs:
 				c_wwwl[0] = 0; c_wl[0] = 0; c_bl[0] = 60;
 				weight[0] = treeInATGC.aTGCWeights[4] * weight_part
 				treeATGC.Fill()
@@ -81,9 +81,9 @@ def make_SMBKG_input(ch = "ele", POIs = ["c_www"], oldtrees = 0):
 
 	#prepare fit
 	a1		= RooRealVar("a1_%s"%ch,"a1_%s"%ch,-0.1,-2,0)	
-	c_www		= RooRealVar("c_www","c_www",0,-12,12); 	c_www.setConstant(kTRUE);
-	c_w		= RooRealVar("c_w","c_w",0,-20,20);		c_w.setConstant(kTRUE);
-	c_b		= RooRealVar("c_b","c_b",0,-60,60);		c_b.setConstant(kTRUE);
+	cwww		= RooRealVar("cwww","cwww",0,-12,12); 		cwww.setConstant(kTRUE);
+	cw		= RooRealVar("cw","cw",0,-20,20);		cw.setConstant(kTRUE);
+	cb		= RooRealVar("cb","cb",0,-60,60);		cb.setConstant(kTRUE);
 	#make and fill SM histogram, SM fit
 	SMhist		= TH1F("SMhist","SMhist",nbins4fit,binlo,binhi)
 	SMPdf		= RooExponential("SMPdf","SMPdf",rrv_mass_lvj,a1)
@@ -95,142 +95,170 @@ def make_SMBKG_input(ch = "ele", POIs = ["c_www"], oldtrees = 0):
 	SMPdf.fitTo(SMdatahist, RooFit.SumW2Error(kTRUE));	a1.setConstant(kTRUE)
 	#make and fill ATGC histograms
 	N1_factors	= []
+	exp_factors	= []
+	par_max		= []
 	PDFs		= []
+	hists		= [SMdatahist]
 	for para in POIs:
 		if para == "cwww":
-			par_max = 12
-		if para == "cw":
-			par_max = 20
-		if para == "cb":
-			par_max = 60
-		hist4fit	= TH1F("hist4fit","hist4fit",3,-1.5*par_max,1.5*par_max)
-		c_pos_hist	= TH1F("c_pos_hist","c_pos_hist",nbins4fit,binlo,binhi)
-		c_neg_hist	= TH1F("c_neg_hist","c_neg_hist",nbins4fit,binlo,binhi)
-		for i in range(treeATGC.GetEntries()):
-			treeATGC.GetEntry(i)
-		    	if (para == "cwww" and treeATGC.c_wwwl == par_max) or (para == "cw" and treeATGC.c_wl == par_max) or (para == "cb" and treeATGC.c_bl == par_max):
-		      		c_pos_hist.Fill(treeATGC.m_lvj,treeATGC.weight)
-		    	if (para == "cwww" and treeATGC.c_wwwl == -par_max) or (para == "cw" and treeATGC.c_wl == -par_max) or (para == "cb" and treeATGC.c_bl == -par_max):
-		      		c_neg_hist.Fill(treeATGC.m_lvj,treeATGC.weight)
-
-		c_pos_datahist	= RooDataHist("c_pos_datahist","c_pos_datahist",RooArgList(rrv_mass_lvj),c_pos_hist)
-		c_neg_datahist	= RooDataHist("c_neg_datahist","c_neg_datahist",RooArgList(rrv_mass_lvj),c_neg_hist)
-		hist4fit.SetBinContent(1,c_neg_datahist.sumEntries()/SMdatahist.sumEntries())
-		hist4fit.SetBinContent(2,1)
-		hist4fit.SetBinContent(3,c_pos_datahist.sumEntries()/SMdatahist.sumEntries())
-		hist4fit.Fit("pol2")
-		fitfunc		= hist4fit.GetFunction("pol2")
-		if para == "cwww":
-			par0_cwww		= RooRealVar("par0_cwww","par0_cwww",fitfunc.GetParameter(0)); 		par0_cwww.setConstant(kTRUE);
-			par1_cwww		= RooRealVar("par1_cwww","par1_cwww",fitfunc.GetParameter(1)); 		par1_cwww.setConstant(kTRUE);
-			par2_cwww		= RooRealVar("par2_cwww","par2_cwww",fitfunc.GetParameter(2)); 		par2_cwww.setConstant(kTRUE);
-			scaleshape_cwww		= RooFormulaVar("scaleshape_cwww","scaleshape_cwww","@0+@1*@3+@2*@3*@3",RooArgList(par0_cwww,par1_cwww,par2_cwww,c_www))
-			scaleshapemax_cwww	= RooRealVar("scaleshapemax_cwww","scaleshapemax_cwww",hist4fit.GetMaximum());		scaleshapemax_cwww.setConstant(kTRUE);
-			N1_cwww			= RooFormulaVar("N1_cwww","N1_cwww","abs((@1-@0)/(@1-1))",RooArgList(scaleshape_cwww,scaleshapemax_cwww))
+			par_max.append(12)
+			hist4fit_cwww	= TH1F("hist4fit_cwww","hist4fit_cwww",3,-1.5*par_max[0],1.5*par_max[0])
+			cwww_pos_hist	= TH1F("c_pos_hist_cwww","c_pos_hist_cwww",nbins4fit,binlo,binhi)
+			cwww_neg_hist	= TH1F("c_neg_hist_cwww","c_neg_hist_cwww",nbins4fit,binlo,binhi)
+			for i in range(treeATGC.GetEntries()):
+				treeATGC.GetEntry(i)
+			    	if (para == "cwww" and treeATGC.c_wwwl == par_max[0]):
+			      		cwww_pos_hist.Fill(treeATGC.m_lvj,treeATGC.weight)
+			    	if (para == "cwww" and treeATGC.c_wwwl == -par_max[0]):
+			      		cwww_neg_hist.Fill(treeATGC.m_lvj,treeATGC.weight)
+			cwww_pos_datahist	= RooDataHist("cwww_pos_datahist","cwww_pos_datahist",RooArgList(rrv_mass_lvj),cwww_pos_hist)
+			cwww_neg_datahist	= RooDataHist("cwww_neg_datahist","cwww_neg_datahist",RooArgList(rrv_mass_lvj),cwww_neg_hist)
+			hist4fit_cwww.SetBinContent(1,cwww_neg_datahist.sumEntries()/SMdatahist.sumEntries())
+			hist4fit_cwww.SetBinContent(2,1)
+			hist4fit_cwww.SetBinContent(3,cwww_pos_datahist.sumEntries()/SMdatahist.sumEntries())
+			hist4fit_cwww.Fit("pol2")
+			fitfunc_cwww		= hist4fit_cwww.GetFunction("pol2")
+			par0_cwww		= RooRealVar("par0_cwww","par0_cwww",fitfunc_cwww.GetParameter(0)); 		par0_cwww.setConstant(kTRUE);
+			par1_cwww		= RooRealVar("par1_cwww","par1_cwww",fitfunc_cwww.GetParameter(1)); 		par1_cwww.setConstant(kTRUE);
+			par2_cwww		= RooRealVar("par2_cwww","par2_cwww",fitfunc_cwww.GetParameter(2)); 		par2_cwww.setConstant(kTRUE);
+			scaleshape_cwww		= RooFormulaVar("scaleshape_cwww","scaleshape_cwww","@0+@1*@3+@2*@3*@3",RooArgList(par0_cwww,par1_cwww,par2_cwww,cwww))
+			scaleshapemax_cwww	= RooRealVar("scaleshapemax_cwww","scaleshapemax_cwww",hist4fit_cwww.GetMaximum());		scaleshapemax_cwww.setConstant(kTRUE);
+			N1_cwww			= RooFormulaVar("N1_cwww","N1_cwww","abs((@0-1)/(@1-1))",RooArgList(scaleshape_cwww,scaleshapemax_cwww))
 			N1_factors.append(N1_cwww)
-			a2		= RooRealVar("a_%s_%s"%(para,ch),"a2_%s_%s"%(para,ch),-0.1,-2,0)
+			a2		= RooRealVar("a_%s_%s"%(para,ch),"a2_%s_%s"%(para,ch),-0.001,-2,0)
 			cwwwPdf		= RooExponential("cwwwPdf","cwwwPdf",rrv_mass_lvj,a2)
-			c_www.setVal(par_max)
-			cwwwPdf.fitTo(c_pos_datahist);	a2.setConstant(kTRUE)
 			PDFs.append(cwwwPdf)
+			hists.extend([cwww_neg_datahist,cwww_pos_datahist])
+			exp_factors.append(a2)
 		if para == "cw":
-			par0_cw			= RooRealVar("par0_cw","par0_cw",fitfunc.GetParameter(0)); 		par0_cw.setConstant(kTRUE);
-			par1_cw			= RooRealVar("par1_cw","par1_cw",fitfunc.GetParameter(1)); 		par1_cw.setConstant(kTRUE);
-			par2_cw			= RooRealVar("par2_cw","par2_cw",fitfunc.GetParameter(2)); 		par2_cw.setConstant(kTRUE);
-			scaleshape_cw		= RooFormulaVar("scaleshape_cw","scaleshape_cw","@0+@1*@3+@2*@3*@3",RooArgList(par0_cw,par1_cw,par2_cw,c_w))
-			scaleshapemax_cw	= RooRealVar("scaleshapemax_cw","scaleshapemax_cw",hist4fit.GetMaximum());		scaleshapemax_cw.setConstant(kTRUE);
-			N1_cw			= RooFormulaVar("N1_cw","N1_cw","abs((@1-@0)/(@1-1))",RooArgList(scaleshape_cw,scaleshapemax_cw))
+			par_max.append(20)
+			hist4fit_cw	= TH1F("hist4fit_cw","hist4fit_cw",3,-1.5*par_max[1],1.5*par_max[1])
+			cw_pos_hist	= TH1F("c_pos_hist_cw","c_pos_hist_cw",nbins4fit,binlo,binhi)
+			cw_neg_hist	= TH1F("c_neg_hist_cw","c_neg_hist_cw",nbins4fit,binlo,binhi)
+			for i in range(treeATGC.GetEntries()):
+				treeATGC.GetEntry(i)
+			    	if (para == "cw" and treeATGC.c_wl == par_max[1]):
+			      		cw_pos_hist.Fill(treeATGC.m_lvj,treeATGC.weight)
+			    	if (para == "cw" and treeATGC.c_wl == -par_max[1]):
+			      		cw_neg_hist.Fill(treeATGC.m_lvj,treeATGC.weight)
+			cw_pos_datahist	= RooDataHist("cw_pos_datahist","cw_pos_datahist",RooArgList(rrv_mass_lvj),cw_pos_hist)
+			cw_neg_datahist	= RooDataHist("cw_neg_datahist","cw_neg_datahist",RooArgList(rrv_mass_lvj),cw_neg_hist)
+			hist4fit_cw.SetBinContent(1,cw_neg_datahist.sumEntries()/SMdatahist.sumEntries())
+			hist4fit_cw.SetBinContent(2,1)
+			hist4fit_cw.SetBinContent(3,cw_pos_datahist.sumEntries()/SMdatahist.sumEntries())
+			hist4fit_cw.Fit("pol2")
+			fitfunc_cw		= hist4fit_cw.GetFunction("pol2")
+			par0_cw			= RooRealVar("par0_cw","par0_cw",fitfunc_cw.GetParameter(0)); 		par0_cw.setConstant(kTRUE);
+			par1_cw			= RooRealVar("par1_cw","par1_cw",fitfunc_cw.GetParameter(1)); 		par1_cw.setConstant(kTRUE);
+			par2_cw			= RooRealVar("par2_cw","par2_cw",fitfunc_cw.GetParameter(2)); 		par2_cw.setConstant(kTRUE);
+			scaleshape_cw		= RooFormulaVar("scaleshape_cw","scaleshape_cw","@0+@1*@3+@2*@3*@3",RooArgList(par0_cw,par1_cw,par2_cw,cw))
+			scaleshapemax_cw	= RooRealVar("scaleshapemax_cw","scaleshapemax_cw",hist4fit_cw.GetMaximum());		scaleshapemax_cw.setConstant(kTRUE);
+			N1_cw			= RooFormulaVar("N1_cw","N1_cw","abs((@0-1)/(@1-1))",RooArgList(scaleshape_cw,scaleshapemax_cw))
 			N1_factors.append(N1_cw)
-			a3		= RooRealVar("a_%s_%s"%(para,ch),"a3_%s_%s"%(para,ch),-0.1,-2,0)
+			a3		= RooRealVar("a_%s_%s"%(para,ch),"a3_%s_%s"%(para,ch),-0.001,-2,0)
 			cwPdf		= RooExponential("cwPdf","cwPdf",rrv_mass_lvj,a3)
-			c_w.setVal(par_max)
-			cwPdf.fitTo(c_pos_datahist);	a3.setConstant(kTRUE)
 			PDFs.append(cwPdf)
+			hists.extend([cw_neg_datahist,cw_pos_datahist])
+			exp_factors.append(a3)
 		if para == "cb":
-			par0_cb			= RooRealVar("par0_cb","par0_cb",fitfunc.GetParameter(0)); 		par0_cb.setConstant(kTRUE);
-			par1_cb			= RooRealVar("par1_cb","par1_cb",fitfunc.GetParameter(1)); 		par1_cb.setConstant(kTRUE);
-			par2_cb			= RooRealVar("par2_cb","par2_cb",fitfunc.GetParameter(2)); 		par2_cb.setConstant(kTRUE);
-			scaleshape_cb		= RooFormulaVar("scaleshape_cb","scaleshape_cb","@0+@1*@3+@2*@3*@3",RooArgList(par0_cb,par1_cb,par2_cb,c_b))
-			scaleshapemax_cb	= RooRealVar("scaleshapemax_cb","scaleshapemax_cb",hist4fit.GetMaximum());		scaleshapemax_cb.setConstant(kTRUE);
-			N1_cb			= RooFormulaVar("N1_cb","N1_cb","abs((@1-@0)/(@1-1))",RooArgList(scaleshape_cb,scaleshapemax_cb))
+			par_max.append(60)
+			hist4fit_cb	= TH1F("hist4fit_cb","hist4fit_cb",3,-1.5*par_max[2],1.5*par_max[2])
+			cb_pos_hist	= TH1F("c_pos_hist_cb","c_pos_hist_cb",nbins4fit,binlo,binhi)
+			cb_neg_hist	= TH1F("c_neg_hist_cb","c_neg_hist_cb",nbins4fit,binlo,binhi)
+			for i in range(treeATGC.GetEntries()):
+				treeATGC.GetEntry(i)
+			    	if (para == "cb" and treeATGC.c_bl == par_max[2]):
+			      		cb_pos_hist.Fill(treeATGC.m_lvj,treeATGC.weight)
+			    	if (para == "cb" and treeATGC.c_bl == -par_max[2]):
+			      		cb_neg_hist.Fill(treeATGC.m_lvj,treeATGC.weight)
+			cb_pos_datahist	= RooDataHist("cb_pos_datahist","cb_pos_datahist",RooArgList(rrv_mass_lvj),cb_pos_hist)
+			cb_neg_datahist	= RooDataHist("cb_neg_datahist","cb_neg_datahist",RooArgList(rrv_mass_lvj),cb_neg_hist)
+			hist4fit_cb.SetBinContent(1,cb_neg_datahist.sumEntries()/SMdatahist.sumEntries())
+			hist4fit_cb.SetBinContent(2,1)
+			hist4fit_cb.SetBinContent(3,cb_pos_datahist.sumEntries()/SMdatahist.sumEntries())
+			hist4fit_cb.Fit("pol2")
+			fitfunc_cb		= hist4fit_cb.GetFunction("pol2")
+			par0_cb			= RooRealVar("par0_cb","par0_cb",fitfunc_cb.GetParameter(0)); 		par0_cb.setConstant(kTRUE);
+			par1_cb			= RooRealVar("par1_cb","par1_cb",fitfunc_cb.GetParameter(1)); 		par1_cb.setConstant(kTRUE);
+			par2_cb			= RooRealVar("par2_cb","par2_cb",fitfunc_cb.GetParameter(2)); 		par2_cb.setConstant(kTRUE);
+			scaleshape_cb		= RooFormulaVar("scaleshape_cb","scaleshape_cb","@0+@1*@3+@2*@3*@3",RooArgList(par0_cb,par1_cb,par2_cb,cb))
+			scaleshapemax_cb	= RooRealVar("scaleshapemax_cb","scaleshapemax_cb",hist4fit_cb.GetMaximum());		scaleshapemax_cb.setConstant(kTRUE);
+			N1_cb			= RooFormulaVar("N1_cb","N1_cb","abs((@0-1)/(@1-1))",RooArgList(scaleshape_cb,scaleshapemax_cb))
 			N1_factors.append(N1_cb)
-			a4		= RooRealVar("a_%s_%s"%(para,ch),"a4_%s_%s"%(para,ch),-0.1,-2,0)
+			a4		= RooRealVar("a_%s_%s"%(para,ch),"a4_%s_%s"%(para,ch),-0.001,-2,0)
 			cbPdf		= RooExponential("cbPdf","cbPdf",rrv_mass_lvj,a4)
-			c_b.setVal(par_max)
-			cbPdf.fitTo(c_pos_datahist);	a4.setConstant(kTRUE)
 			PDFs.append(cbPdf)
-
+			hists.extend([cb_neg_datahist,cb_pos_datahist])
+			exp_factors.append(a4)
+	#make and fit model
 	if len(PDFs) == 1:
-		aTGC_pdf = PDFs[0]
+		aTGC_pdf 	= PDFs[0]
+		model 		= RooAddPdf("aTGC-model","aTGC-model",SMPdf,aTGC_pdf,N1_factors[0])
+		fitres		= model.fitTo(hists[2],RooFit.Save(kTRUE), RooFit.SumW2Error(kTRUE));	exp_factors[0].setConstant(kTRUE);
+		fitres.Print()
 	if len(PDFs) == 2:
-		aTGC_pdf = RooAddPdf("aTGC-Pdf","aTGC-Pdf",RooArgList(PDFs[0],PDFs[1]))
+		if do_plot:
+			can1		= TCanvas("canvas1",POIs[0],1)
+			can2		= TCanvas("canvas2",POIs[1],1)
+			p1 		= rrv_mass_lvj.frame()
+			p2 		= rrv_mass_lvj.frame()
+		model		= RooAddPdf("aTGC-model","aTGC-model",RooArgList(PDFs[0],PDFs[1],SMPdf),RooArgList(N1_factors[0],N1_factors[1]))
+		POI_list	= [N1_factors[0].getParameter("scaleshape_%s"%POIs[0]).getParameter("%s"%POIs[0]),N1_factors[1].getParameter("scaleshape_%s"%POIs[1]).getParameter("%s"%POIs[1])]
+		#fit first pdf
+		POI_list[0].setVal(par_max[0])
+		POI_list[1].setVal(0)
+		exp_factors[1].setConstant(kTRUE)
+		fitres1		= model.fitTo(hists[2],RooFit.Save(kTRUE), RooFit.SumW2Error(kTRUE));	exp_factors[0].setConstant(kTRUE);
+		if do_plot:
+			hists[2].plotOn(p1,RooFit.MarkerColor(par_max[0]+1))
+			model.plotOn(p1,RooFit.LineColor(par_max[0]+1))
+		exp_factors[1].setConstant(kFALSE)
+		#fit second pdf
+		POI_list[1].setVal(par_max[1])
+		POI_list[0].setVal(0)
+		fitres2		= model.fitTo(hists[4],RooFit.Save(kTRUE), RooFit.SumW2Error(kTRUE));	exp_factors[1].setConstant(kTRUE);
+		fitres1.Print();	fitres2.Print();
+		if do_plot:
+			hists[4].plotOn(p2,RooFit.MarkerColor(par_max[1]+1))
+			model.plotOn(p2,RooFit.LineColor(par_max[1]+1))
+			#add SM to plot
+			hists[0].plotOn(p1,RooFit.MarkerColor(kBlack))
+			hists[0].plotOn(p2,RooFit.MarkerColor(kBlack))
+			POI_list[0].setVal(0);		POI_list[1].setVal(0);
+			model.plotOn(p1,RooFit.LineColor(kBlack))
+			model.plotOn(p2,RooFit.LineColor(kBlack))
+			for i in range(par_max[0]):
+				POI_list[0].setVal(i);		
+				POI_list[1].setVal(0)
+				normval0	= SMdatahist.sumEntries()*N1_factors[0].getParameter("scaleshape_%s"%POIs[0]).getVal()
+				model.plotOn(p1,RooFit.LineWidth(1),RooFit.LineColor(i+1),RooFit.Normalization(normval0,RooAbsReal.NumEvent))
+			for i in range(par_max[1]):
+				POI_list[1].setVal(i);		
+				POI_list[0].setVal(0)
+				normval1	= SMdatahist.sumEntries()*N1_factors[1].getParameter("scaleshape_%s"%POIs[1]).getVal()
+				model.plotOn(p2,RooFit.LineWidth(1),RooFit.LineColor(i+1),RooFit.Normalization(normval1,RooAbsReal.NumEvent))
+
+			#draw plot
+			can1.cd()
+			p1.GetYaxis().SetRangeUser(0.03,50)
+			p1.Draw()
+			can1.Update()
+			can2.cd()
+			p2.GetYaxis().SetRangeUser(0.03,50)
+			p2.Draw()
+			can2.Update()
+
+
+		raw_input("@")
 	if len(PDFs) == 3:
-		#aTGC_pdf = RooProdPdf("aTGC-Pdf","aTGC-Pdf",RooArgList(PDFs[0],PDFs[1],PDFs[2]))
-		raise RuntimeError("Not implemented yet!")
-	print aTGC_pdf
-	aTGC_pdf.Print()
-	exit(0)
+		raise RuntimeError(str(len(PDFs)) + " parameters not done yet!")
 
 
-
-
-
-
-
-	
-
-
-	
-	
-	model 		= RooAddPdf("aTGC-model","aTGC-model",SMPdf,c12Pdf,N1)
-	model.Print()
-
-	#plot + canvas
-	plot		= rrv_mass_lvj.frame()
-	plot2		= c_www.frame()
-	can1 		= TCanvas("can1","can1",1)
-	can2 		= TCanvas("can2","can2",1)
-
-	#model fit
-	c_www.setVal(12)
-	res = model.fitTo(cwww12datahist,RooFit.Save(true), RooFit.SumW2Error(kTRUE))
-	a2.setConstant(kTRUE)
-	cwww12datahist.plotOn(plot, RooFit.MarkerColor(13))
-	model.plotOn(plot, RooFit.LineColor(13))
-	SMdatahist.plotOn(plot, RooFit.MarkerColor(1))
-	res.Print()
-
-	#plot
-	can1.cd()
-	cwww12datahist.plotOn(plot, RooFit.MarkerColor(13))
-	model.plotOn(plot, RooFit.LineColor(13))
-	for i in range(13):	
-		c_www.setVal(i)
-		normval = SMdatahist.sumEntries()*scaleshape.getVal()
-		model.plotOn(plot,RooFit.LineColor(i+1), RooFit.LineWidth(1),RooFit.Normalization(normval,RooAbsReal.NumEvent))
-	plot.GetYaxis().SetRangeUser(0.03,50)
-	can1.SetLogy()
-	plot.Draw()
-	can1.Update()
-
-	can2.cd()
-	scaleshape.plotOn(plot2)
-	plot2.Draw()
-	can2.Update()
-
-	raw_input("~~")
-	 
 	#import to ws
-
-	c_www.setVal(0)	
-	getattr(w,"import")(model)
-	getattr(w,"import")(scaleshape)
-	singletop.SetName("STop"); getattr(w,"import")(singletop)
-	ttbar.SetName("TTbar"); getattr(w,"import")(ttbar)
-	wjets.SetName("WJets"); getattr(w,"import")(wjets) 
+	getattr(w,"import")(model) 
 
 	path	="../../CombinedEWKAnalysis/CommonTools/data/anomalousCoupling"
-	cwww 	= "_cwww" if "c_www" in POIs else ""; cw = "_cw" if "c_w" in POIs else ""; cb = "_cb" if "c_b" in POIs else "";
+	cwww 	= "_cwww" if "cwww" in POIs else ""; cw = "_cw" if "cw" in POIs else ""; cb = "_cb" if "cb" in POIs else "";
 	output 	= TFile("%s/ch_%s%s%s%s.root"%(path,ch,cwww,cw,cb),"recreate")
 
 	data_obs.Write()
