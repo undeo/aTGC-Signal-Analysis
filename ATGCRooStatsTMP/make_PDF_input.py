@@ -7,6 +7,7 @@ gSystem.Load('/afs/cern.ch/work/c/crenner/CMSSW_7_1_5/lib/slc6_amd64_gcc481/libH
 from ROOT import RooErfExpPdf, RooAlpha, RooAlpha4ErfPowPdf, RooAlpha4ErfPow2Pdf, RooAlpha4ErfPowExpPdf, RooPowPdf, RooPow2Pdf, RooErfPowExpPdf, RooErfPowPdf, RooErfPow2Pdf, RooQCDPdf, RooUser1Pdf, RooBWRunPdf, RooAnaExpNPdf, RooExpNPdf, RooAlpha4ExpNPdf, RooExpTailPdf, RooAlpha4ExpTailPdf, Roo2ExpPdf, RooAlpha42ExpPdf
 
 POI	=	[]
+par_max = {'cwww' : 12, 'ccw' : 20, 'cb' : 60}
 
 parser	= OptionParser()
 parser.add_option('--POIs', dest='parameters', help='define parameters of interest')
@@ -72,10 +73,46 @@ def make_ATGCtree(fileInATGC='', ch='ele'):
 	treeATGC_tmp.Write()
 	treeATGC_tmp.Print()
 	print '--------> Write to file ' + fileOutATGC.GetName()
-	return treeATGC_tmp	
+	
+	
+
+def make_plots(rrv_x,wtmp):
+        
+        can             = []
+        plots	        = []
+	
+	for i in range(len(POI)):
+                c       = TCanvas(POI[i],POI[i],1)
+                p       = rrv_x.frame()
+                can.append(c)
+                plots.append(p)
+	for i in range(len(POI)):
+		for j in range(len(POI)):
+			wtmp.var(POI[j]).setVal(0)
+		wtmp.data('SMdatahist').plotOn(plots[i],RooFit.MarkerColor(kBlue))
+		wtmp.data('pos_datahist_%s'%POI[i]).plotOn(plots[i],RooFit.MarkerColor(kRed))
+		normvalSM	= wtmp.function('normfactor_%sd'%len(POI)).getVal() * wtmp.data('SMdatahist').sumEntries()
+		wtmp.pdf('aTGC_model').plotOn(plots[i],RooFit.LineColor(kBlue),RooFit.Normalization(normvalSM, RooAbsReal.NumEvent))
+		wtmp.var(POI[i]).setVal(par_max[POI[i]])
+		normval		= wtmp.function('normfactor_%sd'%len(POI)).getVal() * wtmp.data('SMdatahist').sumEntries()
+        	wtmp.pdf('aTGC_model').plotOn(plots[i],RooFit.LineColor(kRed),RooFit.Normalization(normval, RooAbsReal.NumEvent))
+		for j in range(14):
+			for k in range(len(POI)):
+				wtmp.var(POI[k]).setVal(0)
+			wtmp.var(POI[i]).setVal(par_max[POI[i]]/15. * (j+1))
+			normval	= wtmp.function('normfactor_%sd'%len(POI)).getVal() * wtmp.data('SMdatahist').sumEntries()
+			wtmp.pdf('aTGC_model').plotOn(plots[i],RooFit.LineColor(kGreen),RooFit.LineStyle(kDashed),RooFit.Normalization(normval,RooAbsReal.NumEvent))
+		wtmp.data('SMdatahist').plotOn(plots[i],RooFit.MarkerColor(kBlue))
+		wtmp.data('pos_datahist_%s'%POI[i]).plotOn(plots[i],RooFit.MarkerColor(kRed))
+		plots[i].GetYaxis().SetRangeUser(0.03,100)
+		can[i].cd()
+		can[i].SetLogy()
+		plots[i].Draw()
+		can[i].Update()
+	raw_input('plots plotted')
 
 
-def make_SMBKG_input(ch = 'ele'):
+def make_input(ch = 'ele'):
 
 	nbins4fit	= 20
 	binlo		= 1000
@@ -101,12 +138,10 @@ def make_SMBKG_input(ch = 'ele'):
 
 	#read or make ATGC and new tree
 	if options.newtrees:
-		treeATGC	= make_ATGCtree('Input/WW-aTGC-%s.root'%ch, ch)
-		treeATGC.Print()
-	else:
-		fileInATGC	= TFile.Open('Output/ATGC-Tree_%s.root'%ch)
-		treeATGC	= fileInATGC.Get('BasicTree')
-		treeATGC.Print()
+		make_ATGCtree('Input/WW-aTGC-%s.root'%ch, ch)
+	fileInATGC	= TFile.Open('Output/ATGC-Tree_%s.root'%ch)
+	treeATGC	= fileInATGC.Get('BasicTree')
+	treeATGC.Print()
 
 	#prepare fit
 	a1		= RooRealVar('a_SM_%s'%ch,'a_SM_%s'%ch,-0.1,-2,0)	
@@ -125,7 +160,6 @@ def make_SMBKG_input(ch = 'ele'):
 	SMPdf.fitTo(SMdatahist, RooFit.SumW2Error(kTRUE));	a1.setConstant(kTRUE)
 
 	#make and fill ATGC histograms
-	par_max		= {'cwww' : 12, 'ccw' : 20, 'cb' : 60}
 	wtmp		= RooWorkspace('wtmp')
 	getattr(wtmp,'import')(SMdatahist)
 
@@ -148,7 +182,7 @@ def make_SMBKG_input(ch = 'ele'):
 		hist4fit.SetBinContent(1,neg_datahist.sumEntries()/SMdatahist.sumEntries())
 		hist4fit.SetBinContent(2,1)
 		hist4fit.SetBinContent(3,pos_datahist.sumEntries()/SMdatahist.sumEntries())
-		hist4fit.Fit('pol2')
+		hist4fit.Fit('pol2','O')
 		fitfunc		= hist4fit.GetFunction('pol2')
 		par0		= RooRealVar('par0_%s_%s'%(para,ch),'par0_%s_%s'%(para,ch),fitfunc.GetParameter(0)); 		par0.setConstant(kTRUE);
 		par1		= RooRealVar('par1_%s_%s'%(para,ch),'par1_%s_%s'%(para,ch),fitfunc.GetParameter(1)); 		par1.setConstant(kTRUE);
@@ -179,29 +213,19 @@ def make_SMBKG_input(ch = 'ele'):
 	#make and fit model
 	if len(POI) == 1:
 		wtmp.var(POI[0]).setVal(par_max[POI[0]])
-		print wtmp.function('N1_%s'%POI[0]).getVal()
 		model 		= RooAddPdf('aTGC_model','aTGC_model',RooArgList(SMPdf,wtmp.pdf('Pdf_%s'%POI[0])),RooArgList(wtmp.function('N1_%s'%POI[0]),wtmp.function('N2_%s'%POI[0])))
 		wtmp.var('a_%s_%s'%(POI[0],ch)).setConstant(kFALSE)			
 		fitres		= model.fitTo(wtmp.data('pos_datahist_%s'%POI[0]),RooFit.Save(kTRUE), RooFit.SumW2Error(kTRUE))
 		wtmp.var('a_%s_%s'%(POI[0],ch)).setConstant(kTRUE)
 		fitres.Print()
+		normfactor_1d = RooFormulaVar('normfactor_1d','normfactor_1d','1+(@0-1)',RooArgList(wtmp.function('scaleshape_%s'%POI[0])))
+                getattr(WS,'import')(normfactor_1d)
+		getattr(wtmp,'import')(normfactor_1d)
+		getattr(wtmp,'import')(model)
 		if options.do_plots:
-			can1		= TCanvas('canvas1',POI[0],1)
-			p1 		= rrv_mass_lvj.frame()
-			wtmp.data('pos_datahist_%s'%POI[0]).plotOn(p1,RooFit.MarkerColor(kRed))
-			model.plotOn(p1,RooFit.LineColor(kRed))
-			wtmp.data('SMdatahist').plotOn(p1)
-			p1.GetYaxis().SetRangeUser(0.03,75)
-			p1.Draw()
-			can1.SetLogy()
-			raw_input('@@')
+			make_plots(rrv_mass_lvj,wtmp)
 
 	if len(POI) == 2:
-		if options.do_plots:
-			can1		= TCanvas('canvas1',POI[0],1)
-			can2		= TCanvas('canvas2',POI[1],1)
-			p1 		= rrv_mass_lvj.frame()
-			p2 		= rrv_mass_lvj.frame()
 		if 'cwww' in POI:
 			cwww12	= RooFormulaVar('cwww12','cwww12','(@0/12)**2',RooArgList(wtmp.var('cwww')))
 		if 'ccw' in POI:
@@ -218,9 +242,6 @@ def make_SMBKG_input(ch = 'ele'):
 		wtmp.var('a_%s_%s'%(POI[0],ch)).setConstant(kFALSE)
 		fitres1		= model.fitTo(wtmp.data('pos_datahist_%s'%POI[0]),RooFit.Save(kTRUE), RooFit.SumW2Error(kTRUE))
 		wtmp.var('a_%s_%s'%(POI[0],ch)).setConstant(kTRUE)
-		if options.do_plots:
-			wtmp.data('pos_datahist_%s'%POI[0]).plotOn(p1,RooFit.MarkerColor(kRed))
-			model.plotOn(p1,RooFit.LineColor(kRed))
 		#fit second pdf
 		wtmp.var(POI[1]).setVal(par_max[POI[1]])
 		wtmp.var(POI[0]).setVal(0)
@@ -229,52 +250,14 @@ def make_SMBKG_input(ch = 'ele'):
 		wtmp.var('a_%s_%s'%(POI[1],ch)).setConstant(kTRUE);
 		fitres1.Print()
 		fitres2.Print()
+		normfactor_2d = RooFormulaVar('normfactor_2d','normfactor_2d','1+((@0-1)+(@1-1))',RooArgList(wtmp.function('scaleshape_%s'%POI[0]),wtmp.function('scaleshape_%s'%POI[1])))
+                getattr(WS,'import')(normfactor_2d)
+		getattr(wtmp,'import')(normfactor_2d)
+		getattr(wtmp,'import')(model)
 		if options.do_plots:
-			wtmp.data('pos_datahist_%s'%POI[1]).plotOn(p2,RooFit.MarkerColor(kRed))
-			model.plotOn(p2,RooFit.LineColor(kRed))
-			#add SM to plot
-			wtmp.data('SMdatahist').plotOn(p1,RooFit.MarkerColor(kBlack))
-			wtmp.data('SMdatahist').plotOn(p2,RooFit.MarkerColor(kBlack))
-			wtmp.var(POI[0]).setVal(0)
-			wtmp.var(POI[1]).setVal(0)
-			model.plotOn(p1,RooFit.LineColor(kBlack))
-			model.plotOn(p2,RooFit.LineColor(kBlack))
-			for i in range(par_max[POI[0]]):
-				wtmp.var(POI[0]).setVal(i);		
-				wtmp.var(POI[1]).setVal(0)
-				normval0	= wtmp.data('SMdatahist').sumEntries()*wtmp.function('scaleshape_%s'%POI[0]).getVal()
-				model.plotOn(p1,RooFit.LineWidth(2),RooFit.LineColor(i+1),RooFit.Normalization(normval0,RooAbsReal.NumEvent))
-				wtmp.data('SMdatahist').plotOn(p1,RooFit.MarkerColor(kBlack))
-				wtmp.data('pos_datahist_%s'%POI[0]).plotOn(p1,RooFit.MarkerColor(kRed))
-			for i in range(par_max[POI[1]]):
-				wtmp.var(POI[0]).setVal(0);		
-				wtmp.var(POI[1]).setVal(i)
-				normval1	= wtmp.data('SMdatahist').sumEntries()*wtmp.function('scaleshape_%s'%POI[1]).getVal()
-				model.plotOn(p2,RooFit.LineWidth(2),RooFit.LineColor(i+1),RooFit.Normalization(normval1,RooAbsReal.NumEvent))
-				wtmp.data('SMdatahist').plotOn(p2,RooFit.MarkerColor(kBlack))
-				wtmp.data('pos_datahist_%s'%POI[1]).plotOn(p2,RooFit.MarkerColor(kRed))
-			#draw plot
-			can1.cd()
-			p1.GetYaxis().SetRangeUser(0.03,75)
-			p1.Draw()
-			can1.SetLogy()
-			can1.Update()
-			can2.cd()
-			p2.GetYaxis().SetRangeUser(0.03,75)
-			p2.Draw()
-			can2.SetLogy()
-			can2.Update()
-			raw_input('...')
+			make_plots(rrv_mass_lvj,wtmp)
 
 	if len(POI) == 3:
-		if options.do_plots:
-			can1		= TCanvas('canvas1',POI[0],1)
-			can2		= TCanvas('canvas2',POI[1],1)
-			can3		= TCanvas('canvas3',POI[2],1)
-			p1 		= rrv_mass_lvj.frame()
-			p2 		= rrv_mass_lvj.frame()
-			p3 		= rrv_mass_lvj.frame()
-			plots		= [p1,p2,p3]
 		if 'cwww' in POI:
 			cwww12	= RooFormulaVar('cwww12','cwww12','(@0/12)**2',RooArgList(wtmp.var('cwww')))
 		if 'ccw' in POI:
@@ -287,22 +270,59 @@ def make_SMBKG_input(ch = 'ele'):
 		N3_3d		= RooFormulaVar('N3_3d','N3_3d','(@2*@3)/(1+@0*@1+@2*@3+@4*@5)',paralist)	
 		N4_3d		= RooFormulaVar('N4_3d','N4_3d','(@4*@5)/(1+@0*@1+@2*@3+@4*@5)',paralist)	
 		model		= RooAddPdf('aTGC_model','aTGC_model',RooArgList(SMPdf,wtmp.pdf('Pdf_%s'%POI[0]),wtmp.pdf('Pdf_%s'%POI[1]),wtmp.pdf('Pdf_%s'%POI[2])),RooArgList(N1_3d,N2_3d,N3_3d,N4_3d))
+		normfactor_3d	= RooFormulaVar('normfactor_3d','normfactor_3d','1+(@0-1)+(@1-1)+(@2-1)',RooArgList(wtmp.function('scaleshape_%s'%POI[0]),wtmp.function('scaleshape_%s'%POI[1]),wtmp.function('scaleshape_%s'%POI[2])))
+		getattr(WS,'import')(normfactor_3d)	
+		getattr(wtmp,'import')(normfactor_3d)	
 		model.Print()
-
+		getattr(wtmp,'import')(model)
+		wtmp.Print()
+		
 		#fit 3 pdfs
 		fitresults	= []
 		for i in range(3):
 			wtmp.var(POI[0]).setVal(0); wtmp.var(POI[1]).setVal(0); wtmp.var(POI[2]).setVal(0);
-			wtmp.var(POI[i]).setVal(par_max[i])
+			wtmp.var(POI[i]).setVal(par_max[POI[i]])
 			wtmp.var('a_%s_%s'%(POI[i],ch)).setConstant(kFALSE)
 			fitres		= model.fitTo(wtmp.data('pos_datahist_%s'%POI[i]),RooFit.Save(kTRUE), RooFit.SumW2Error(kTRUE))
 			fitresults.append(fitres)
 			wtmp.var('a_%s_%s'%(POI[i],ch)).setConstant(kTRUE)
-			if options.do_plots:
-				wtmp.data('pos_datahist_%s'%POI[i]).plotOn(plots[i],RooFit.MarkerColor(kRed))
-				model.plotOn(plots[i],RooFit.LineColor(kRed))
-		for j in range(3):
-			fitresults[j].Print()
+		for i in range(3):
+			fitresults[i].Print()
+		
+		
+		if options.do_plots:
+			make_plots(rrv_mass_lvj,wtmp)
+			#cross check
+			canvas		= TCanvas(POI[0]+','+POI[1]+','+POI[2],POI[0]+','+POI[1]+','+POI[2],1)
+			p4		= rrv_mass_lvj.frame()
+			hist_all3	= TH1F('hist_all3','hist_all3',nbins4fit,binlo,binhi)
+			for i in range(treeATGC.GetEntries()):
+				treeATGC.GetEntry(i)
+			    	if (treeATGC.c_wwwl == 12 and treeATGC.c_wl == 20 and treeATGC.c_bl == 60):
+			      		hist_all3.Fill(treeATGC.m_lvj,treeATGC.weight)
+			datahist_all3	= RooDataHist('datahist_all3','datahist_all3',RooArgList(rrv_mass_lvj),hist_all3)
+			wtmp.data('SMdatahist').plotOn(p4,RooFit.MarkerColor(kBlack))
+			datahist_all3.plotOn(p4,RooFit.MarkerColor(kRed))
+			for i in range(3):
+					wtmp.var(POI[i]).setVal(0)
+			model.plotOn(p4,RooFit.LineColor(kBlue),RooFit.Normalization(wtmp.function('normfactor_3d').getVal()*wtmp.data('SMdatahist').sumEntries(),RooAbsReal.NumEvent))
+			for i in range(3):
+					wtmp.var(POI[i]).setVal(par_max[POI[i]])
+			model.plotOn(p4,RooFit.LineColor(kRed),RooFit.Normalization(wtmp.function('normfactor_3d').getVal()*wtmp.data('SMdatahist').sumEntries(),RooAbsReal.NumEvent))
+			for j in range(14):
+				for i in range(3):
+					wtmp.var(POI[i]).setVal(par_max[POI[i]]/15.0 * (j+1))
+				normval = wtmp.function('normfactor_3d').getVal()*wtmp.data('SMdatahist').sumEntries()
+				model.plotOn(p4,RooFit.LineColor(kGreen),RooFit.LineStyle(kDashed),RooFit.Normalization(normval,RooAbsReal.NumEvent))
+			wtmp.data('SMdatahist').plotOn(p4,RooFit.MarkerColor(kBlack))
+			datahist_all3.plotOn(p4,RooFit.MarkerColor(kRed))
+			canvas.cd()
+			p4.GetYaxis().SetRangeUser(0.03,200)
+			canvas.SetLogy()
+			p4.Draw()
+			canvas.SetLogy
+			canvas.Update()
+			raw_input('...')
 
 
 	#import to workspace
@@ -329,5 +349,5 @@ def make_SMBKG_input(ch = 'ele'):
 
 
   
-make_SMBKG_input('ele')
-make_SMBKG_input('mu')
+make_input('ele')
+make_input('mu')
