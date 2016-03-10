@@ -20,7 +20,7 @@ observation  -1.0         -1.0
 bin                                              ch1                      ch1                      ch1                      ch1                      ch2                      ch2                      ch2                      ch2                    
 process                                          ATGCPdf_ch_ele_cwww_ccw  STop                     TTbar                    WJets                    ATGCPdf_ch_mu_cwww_ccw   TTbar                    STop                     WJets                  
 process                                          -1                       1                        2                        3                        0                        2                        1                        3                      
-rate                                             11.1343                  10.6917                  76.3578                  92.2505                  26.3927                  237.3876                 35.1638                  244.0865               
+rate                                             7.4733                   11.1025                  79.2911                  90.5791                  33.3454                  312.6285                 46.8691                  460.5383               
 ----------------------------------------------------------------------------------------------------------------------------------
 CMS_eff_e_13TeV         lnN                      1.02                     1.02                     1.02                     -                        1.02                     1.02                     1.02                     -                      
 CMS_eff_vtag_tau21_sf_13TeV   lnN                1.126/0.874              -                        -                        -                        1.126/0.874              -                        -                        -                      
@@ -42,4 +42,4 @@ CMS_sig_p1_scale_e_13TeV param 0.0 1.0
 CMS_sig_p2_scale_e_13TeV param 0.0 1.0 
 CMS_sig_p1_jes_13TeV param 0.0 1.0 
 CMS_sig_p2_jes_13TeV param 0.0 1.0 
-CMS_sig_p2_jer_13TeV param 0.0 1.0 
+CMS_sig_p2_jer_13TeV param 0.0 1.0

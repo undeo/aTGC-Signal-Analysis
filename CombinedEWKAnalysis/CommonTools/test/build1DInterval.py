@@ -12,7 +12,7 @@ limit = file.Get('limit')
 nEntries = limit.GetEntries()-1
 
 histo = TH1F('LLHscan','',nEntries,minmax[0],minmax[1])
-limit.Draw("c_www >> LLHscan","deltaNLL",'goff')
+limit.Draw("%s >> LLHscan"%parm,"deltaNLL",'goff')
 
 minBin = histo.GetMinimumBin()
 minBinCenter = histo.GetBinCenter(minBin)

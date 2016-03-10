@@ -9,7 +9,9 @@ from ROOT import *
 from optparse import OptionParser
 from ConfigParser import SafeConfigParser
 #@#import new pdfs
-gSystem.Load("/afs/cern.ch/work/c/crenner/CMSSW_5_3_X_2016-02-07-0000/src/EXOVVFitter-master_changed/PDFs/HWWLVJRooPdfs_cxx.so")
+#gSystem.Load("/afs/cern.ch/work/c/crenner/CMSSW_5_3_X_2016-02-07-0000/src/aTGC-BackgroundAnalysis/PDFs/HWWLVJRooPdfs_cxx.so")
+gSystem.Load("/afs/cern.ch/work/c/crenner/CMSSW_7_1_5/lib/slc6_amd64_gcc481/libHiggsAnalysisCombinedLimit.so")
+
 
 from ROOT import RooErfExpPdf, RooAlpha, RooAlpha4ErfPowPdf, RooAlpha4ErfPow2Pdf, RooAlpha4ErfPowExpPdf, RooPowPdf, RooPow2Pdf, RooErfPowExpPdf, RooErfPowPdf, RooErfPow2Pdf, RooQCDPdf, RooUser1Pdf, RooBWRunPdf, RooAnaExpNPdf, RooExpNPdf, RooAlpha4ExpNPdf, RooExpTailPdf, RooAlpha4ExpTailPdf, Roo2ExpPdf, RooAlpha42ExpPdf
 #@#
@@ -145,7 +147,7 @@ else:
 
 NSigBkg_corr_unc_int=0
 
-basepath = '%s/src/aTGC-Signal-Analysis/CombinedEWKAnalysis/CommonTools/data/anomalousCoupling'%os.environ['CMSSW_BASE']
+basepath = '%s/src/CombinedEWKAnalysis/CommonTools/data/anomalousCoupling'%os.environ['CMSSW_BASE']
 
 
 for section in fit_sections:
@@ -161,12 +163,13 @@ for section in fit_sections:
     lType = codename
     f = TFile('%s/%s.root'%(basepath,codename))
 
-    #@#get old workspace4limit_ and rename rrv_mass_lvj
-    oldWS = f.Get("workspace_of_bkg_%s"%ch_name)
+    #@# get old workspace4limit_ and rename rrv_mass_lvj
+    oldWS = f.Get("workspace")
     old_obs = oldWS.var("rrv_mass_lvj")
-    old_obs.setVal(1000)
-    old_obs.setRange(700,3500)
+    old_obs.setVal(2000)
+    old_obs.setRange(1000,3500)
     old_obs.SetName("observable_%s"%codename)
+
     #@#
     Nbkg = cfg.get(codename,'Nbkg')
     print "Nbkg= ",Nbkg
@@ -184,7 +187,7 @@ for section in fit_sections:
 
     data_obs = f.Get('data_obs')
 
-    aTGCPdf = oldWS.pdf("aTGC-model")
+    aTGCPdf = oldWS.pdf("aTGC_model")
     aTGCPdf.Print()
     aTGCPdf.SetName("ATGCPdf_%s"%codename)
     norm_sig_sm = oldWS.var("rate_VV_xww_for_unbin").getVal()
@@ -255,12 +258,10 @@ for section in fit_sections:
 
     data 	= RooDataHist('data_obs', 'data_obs_proc_%s'%codename, vars, data_obs)
     print 'data integral: ',data.Print()
-
-    
+ 
     getattr(theWS, 'import')(data)
     for i in range(0,Nbkg_int):
         getattr(theWS, 'import')(bkgFits[i])
-
     getattr(theWS, 'import')(aTGCPdf)
 
     theWS.Print()
@@ -337,7 +338,6 @@ rate                        {norm_sig_sm}\t""".format(codename=codename,norm_sig
                     card+="""\t\t\t\t{lnN_value}""".format(lnN_value=lnN_value[i][index])
                 else:
                     card+="""\t\t\t\t-"""
-
 
     print card
 
