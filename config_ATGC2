@@ -1,0 +1,75 @@
+[Global]
+NlnN=8
+lnN1_name	=lumi_13TeV
+lnN1_value	=1.046,1.046,1.046,1.046,1.046,1.046,1.046,1.046,1.046,1.046,1.046,1.046
+lnN1_for	=ch_WW_ele_TTbar,ch_WW_ele_STop,ch_WW_ele_signal,ch_WW_mu_TTbar,ch_WW_mu_STop,ch_WW_mu_signal,ch_WZ_ele_TTbar,ch_WZ_ele_STop,ch_WZ_ele_signal,ch_WZ_mu_TTbar,ch_WZ_mu_STop,ch_WZ_mu_signal
+lnN2_name	=CMS_xww_XS_STop_13TeV
+lnN2_value	=1.050,1.050,1.050,1.050
+lnN2_for	=ch_WW_ele_STop,ch_WW_mu_STop,ch_WZ_ele_STop,ch_WZ_mu_STop
+lnN3_name	=CMS_xww_XS_VV_13Te
+lnN3_value	=1.030,1.030,1.030,1.030
+lnN3_for	=ch_WW_ele_signal,ch_WW_mu_signal,ch_WZ_ele_signal,ch_WZ_mu_signal
+lnN4_name	=CMS_xww_WJ_norm_el_HPW_13TeV
+lnN4_value	=1.104,1.097
+lnN4_for	=ch_WW_ele_WJets,ch_WW_mu_WJets
+lnN5_name	=CMS_xww_WJ_norm_el_HPZ_13TeV
+lnN5_value	=1.129,1.081
+lnN5_for	=ch_WZ_ele_WJets,ch_WZ_mu_WJets
+lnN6_name	=CMS_xww_Top_norm_el_HPW_13TeV
+lnN6_value	=1.084,1.084,1.046,1.046
+lnN6_for	=ch_WW_ele_TTbar,ch_WW_ele_STop,ch_WW_mu_TTbar,ch_WW_mu_STop
+lnN7_name	=CMS_xww_Top_norm_el_HPZ_13TeV
+lnN7_value	=1.084,1.084,1.046,1.046
+lnN7_for	=ch_WZ_ele_TTbar,ch_WZ_ele_STop,ch_WZ_mu_TTbar,ch_WZ_mu_STop
+lnN8_name	=CMS_eff_vtag_tau21_sf_13TeV
+lnN8_value	=1.126/0.874,1.126/0.874,1.126/0.874,1.126/0.874
+lnN8_for	=ch_WW_ele_signal,ch_WW_mu_signal,ch_WZ_ele_signal,ch_WZ_mu_signal
+lnN9_name	=CMS_xww_trigger_e_13TeV
+lnN9_value	=1.010,1.010,1.010,1.010,1.010,1.010,1.010,1.010,1.010,1.010,1.010,1.010
+lnN9_for	=ch_WW_ele_TTbar,ch_WW_ele_STop,ch_WW_ele_signal,ch_WW_mu_TTbar,ch_WW_mu_STop,ch_WW_mu_signal,ch_WZ_ele_TTbar,ch_WZ_ele_STop,ch_WZ_ele_signal,ch_WZ_mu_TTbar,ch_WZ_mu_STop,ch_WZ_mu_signal
+lnN10_name	=CMS_eff_e_13TeV
+lnN10_value	=1.020,1.020,1.020,1.020,1.020,1.020,1.020,1.020,1.020,1.020,1.020,1.020
+lnN10_for	=ch_WW_ele_TTbar,ch_WW_ele_STop,ch_WW_ele_signal,ch_WW_mu_TTbar,ch_WW_mu_STop,ch_WW_mu_signal,ch_WZ_ele_TTbar,ch_WZ_ele_STop,ch_WZ_ele_signal,ch_WZ_mu_TTbar,ch_WZ_mu_STop,ch_WZ_mu_signal
+
+model=par1par2par3_TF3
+par1Name = cwww
+par1Low = -24
+par1High = 24
+par2Name = ccw
+par2Low = -40
+par2High = 40
+par3Name = cb
+par3Low = -75
+par3High = 75
+
+[ch_WW_ele]
+Nbkg=3
+bkg1_name=TTbar
+bkg2_name=STop
+bkg3_name=WJets
+
+[ch_WW_mu]
+Nbkg=3
+bkg1_name=TTbar
+bkg2_name=STop
+bkg3_name=WJets
+
+[ch_WZ_ele]
+Nbkg=3
+bkg1_name=TTbar
+bkg2_name=STop
+bkg3_name=WJets
+
+[ch_WZ_mu]
+Nbkg=3
+bkg1_name=TTbar
+bkg2_name=STop
+bkg3_name=WJets
+
+
+
+
+
+
+
+
