@@ -16,6 +16,7 @@ parser.add_option('-n', '--newtrees', action='store_true', dest='newtrees', defa
 parser.add_option('-p', '--plots', action='store_true', dest='do_plots', default=False, help='make plots')
 parser.add_option('--plots2', action='store_true', dest='do_plots2', default=False, help='make parabel plot')
 parser.add_option('--cat', dest='cat', default='WW', help='category, WW or WZ, defines signal region')
+parser.add_option('--lin', action='store_true', dest='lin', default=False, help='add linear dependency')
 (options,args) = parser.parse_args()
 
 
@@ -31,12 +32,12 @@ else:
 	raise RuntimeError('cateogry not supported!')
 
 binlo 	= 900.
-binhi	= 4000.
+binhi	= 3500.
 
 gStyle.SetOptStat(0)
 gStyle.SetOptTitle(0)
 
-def make_ATGCtree(ch='ele'):
+def make_ATGCtree(ch='el'):
 
 	for categ in ['WW','WZ']:
 
@@ -68,7 +69,7 @@ def make_ATGCtree(ch='ele'):
 			and abs(treeInATGC.deltaPhi_WJetMet)>2. and abs(treeInATGC.deltaPhi_WJetWlep)>2.\
 			and treeInATGC.MWW>binlo and treeInATGC.MWW<binhi\
 			and treeInATGC.nbtag==0:
-				weight_part	= 1/20. * lumi_tmp * treeInATGC.puweight * (treeInATGC.genweight/abs(treeInATGC.genweight))
+				weight_part	= 1/20. * lumi_tmp * treeInATGC.totWeight
 				#SM
 				c_wwwl[0] = 0; c_wl[0] = 0; c_bl[0] = 0;
 				weight[0] = treeInATGC.aTGCWeights[7] * weight_part
@@ -114,7 +115,7 @@ def make_ATGCtree(ch='ele'):
 	
 	
 
-def make_plots(rrv_x,wtmp,ch):
+def make_plots(rrv_x,wtmp,ch,cat):
         
         can             = []
         plots	        = []
@@ -124,32 +125,33 @@ def make_plots(rrv_x,wtmp,ch):
                 p       = rrv_x.frame()
                 can.append(c)
                 plots.append(p)
-	for i in range(len(POI)):
-		for j in range(len(POI)):
+	for i in range(3):
+		for j in range(3):
 			wtmp.var(POI[j]).setVal(0)
 		wtmp.data('SMdatahist').plotOn(plots[i],RooFit.MarkerColor(kBlack),RooFit.LineColor(kBlack),RooFit.MarkerSize(0.75),RooFit.DataError(RooAbsData.SumW2))
 		wtmp.data('neg_datahist_%s'%POI[i]).plotOn(plots[i],RooFit.MarkerColor(kBlue),RooFit.LineColor(kBlue),RooFit.MarkerSize(0.75),RooFit.DataError(RooAbsData.SumW2))
-		normvalSM	= wtmp.function('normfactor_3d_%s'%ch).getVal() * wtmp.data('SMdatahist').sumEntries()
+		normvalSM	= wtmp.function('normfactor_3d_%s_%s'%(cat,ch)).getVal() * wtmp.data('SMdatahist').sumEntries()
 		wtmp.pdf('aTGC_model').plotOn(plots[i],\
 					      RooFit.LineColor(kBlack),\
 					      RooFit.Normalization(normvalSM, RooAbsReal.NumEvent))
 		wtmp.var(POI[i]).setVal(-par_max[POI[i]])
-		normval		= wtmp.function('normfactor_3d_%s'%ch).getVal() * wtmp.data('SMdatahist').sumEntries()
+		normval		= wtmp.function('normfactor_3d_%s_%s'%(cat,ch)).getVal() * wtmp.data('SMdatahist').sumEntries()
+
         	wtmp.pdf('aTGC_model').plotOn(plots[i],\
 					      RooFit.LineColor(kBlue),\
 					      RooFit.Normalization(normval, RooAbsReal.NumEvent))
-		for j in range(len(POI)):
+		for j in range(3):
 			wtmp.var(POI[j]).setVal(0)
-		#for j in range(15):
-		#	wtmp.var(POI[i]).setVal(-par_max[POI[i]]/10 * j+2)
-		#	normval	= wtmp.function('normfactor_%sd_%s'%(len(POI),ch)).getVal() * wtmp.data('SMdatahist').sumEntries()
-		#	wtmp.pdf('aTGC_model').plotOn(plots[i],\
-		#				      RooFit.LineColor(kGray+1),\
-		#				      RooFit.LineWidth(1),\
-		#				      RooFit.Normalization(normval,RooAbsReal.NumEvent))
+		for j in range(15):
+			wtmp.var(POI[i]).setVal(-par_max[POI[i]]/10 * j+2)
+			normval	= wtmp.function('normfactor_3d_%s_%s'%(cat,ch)).getVal() * wtmp.data('SMdatahist').sumEntries()
+			wtmp.pdf('aTGC_model').plotOn(plots[i],\
+						      RooFit.LineColor(kGray+1),\
+						      RooFit.LineWidth(1),\
+						      RooFit.Normalization(normval,RooAbsReal.NumEvent))
 		wtmp.data('SMdatahist').plotOn(plots[i],RooFit.MarkerColor(kBlack),RooFit.MarkerSize(0.75),RooFit.DataError(RooAbsData.SumW2))
 		wtmp.data('neg_datahist_%s'%POI[i]).plotOn(plots[i],RooFit.MarkerColor(kBlue),RooFit.MarkerSize(0.75),RooFit.DataError(RooAbsData.SumW2))
-		if ch == 'ele':
+		if ch == 'el':
 			plotmin = 1e-2
 			plotmax = 50
 			if options.cat == 'WZ':
@@ -167,11 +169,12 @@ def make_plots(rrv_x,wtmp,ch):
 		plots[i].Draw()
 		can[i].Update()
 		can[i].SaveAs('docuplots/%s_%s_%s.pdf'%(POI[i],options.cat,ch))
+
 	raw_input('plots plotted')
 
 
 
-def make_input(ch = 'ele'):
+def make_input(ch = 'el'):
 
 	cat		= options.cat	
 	nbins4fit	= 20
@@ -195,16 +198,16 @@ def make_input(ch = 'ele'):
 
 	#prepare variables, parameters and temporary workspace
 	wtmp		= RooWorkspace('wtmp')
-	a1		= RooRealVar('a_SM_%s'%ch,'a_SM_%s'%ch,-0.1,-2,0)
-	if 'cwww' in POI:	
-		cwww		= RooRealVar('cwww','cwww',0,-120,120); 	cwww.setConstant(kTRUE);	getattr(wtmp,'import')(cwww);
-		cwww12		= RooFormulaVar('cwww12','cwww12','@0/12',RooArgList(cwww));			getattr(wtmp,'import')(cwww12);
-	if 'ccw' in POI:
-		ccw		= RooRealVar('ccw','ccw',0,-200,200);		ccw.setConstant(kTRUE);		getattr(wtmp,'import')(ccw);
-		ccw20		= RooFormulaVar('ccw20','ccw20','@0/20',RooArgList(ccw));			getattr(wtmp,'import')(ccw20);
-	if 'cb' in POI:
-		cb		= RooRealVar('cb','cb',0,-600,600);		cb.setConstant(kTRUE);		getattr(wtmp,'import')(cb);	
-		cb60		= RooFormulaVar('cb60','cb60','@0/60',RooArgList(cb));				getattr(wtmp,'import')(cb60);
+	a1		= RooRealVar('a_SM_%s_%s'%(cat,ch),'a_SM_%s_%s'%(ch,cat),-0.1,-2,0)
+	cwww		= RooRealVar('cwww','cwww',0,-120,120);
+	ccw		= RooRealVar('ccw','ccw',0,-200,200);
+	cb		= RooRealVar('cb','cb',0,-600,600);
+	cwww.setConstant(kTRUE);
+	ccw.setConstant(kTRUE);
+	cb.setConstant(kTRUE);
+	getattr(wtmp,'import')(cwww);
+	getattr(wtmp,'import')(ccw);
+	getattr(wtmp,'import')(cb);
 
 
 	#make and fill SM histogram, SM fit
@@ -216,16 +219,16 @@ def make_input(ch = 'ele'):
 	rrv_mass_lvj	= w.var('rrv_mass_lvj')
 	rrv_mass_lvj.setRange(binlo,binhi)
 
-	SMPdf		= RooExponential('SMPdf','SMPdf',rrv_mass_lvj,a1)
+	SMPdf		= RooExponential('SMPdf_%s_%s'%(cat,ch),'SMPdf_%s_%s'%(cat,ch),rrv_mass_lvj,a1)
 	for i in range(treeATGC.GetEntries()):
 		treeATGC.GetEntry(i)
 		if treeATGC.c_wwwl == 0 and treeATGC.c_wl ==0 and treeATGC.c_bl == 0:
 	    		SMhist.Fill(treeATGC.MWW,treeATGC.totEventWeight)
 	SMdatahist	= RooDataHist('SMdatahist','SMdatahist',RooArgList(rrv_mass_lvj),SMhist)
-	##actual fit to determine shape parameter
+	##actual fit to determine SM shape parameter
 	fitresSM	= SMPdf.fitTo(SMdatahist, RooFit.SumW2Error(kTRUE))
 	a1.setConstant(kTRUE)
-	N_SM		= RooRealVar('N_SM_%s'%ch,'N_SM_%s'%ch,SMdatahist.sumEntries())
+	N_SM		= RooRealVar('N_SM_%s_%s'%(cat,ch),'N_SM_%s_%s'%(cat,ch),SMdatahist.sumEntries())
 	N_SM.setConstant(kTRUE)
 
 	getattr(wtmp,'import')(SMdatahist)
@@ -235,6 +238,7 @@ def make_input(ch = 'ele'):
 	#make and fill ATGC histograms, fit quadratic scales
 	##do this for all 3 parameters
 	for para in POI:
+		hist4fit = TH1F('hist4fit_%s'%para,'hist4fit_%s'%para,3,-1.5*par_max[para],1.5*par_max[para])
 		pos_hist	= TH1F('c_pos_hist','c_pos_hist',nbins4fit,binlo,binhi)
 		pos_hist.Sumw2(kTRUE)
 		neg_hist	= TH1F('c_neg_hist','c_neg_hist',nbins4fit,binlo,binhi)
@@ -242,30 +246,48 @@ def make_input(ch = 'ele'):
 
 		for i in range(treeATGC.GetEntries()):
 			treeATGC.GetEntry(i)
-		    	if (para == 'cwww' and treeATGC.c_wwwl == par_max[para] and treeATGC.c_wl == 0 and treeATGC.c_bl == 0)\
-			or (para == 'ccw' and treeATGC.c_wwwl == 0 and treeATGC.c_wl == par_max[para] and treeATGC.c_bl == 0)\
-			or (para == 'cb' and treeATGC.c_wwwl == 0 and treeATGC.c_wl == 0 and treeATGC.c_bl == par_max[para]):
+		    	if (para == 'cwww' and treeATGC.c_wwwl == 12 and treeATGC.c_wl == 0 and treeATGC.c_bl == 0)\
+			or (para == 'ccw' and treeATGC.c_wwwl == 0 and treeATGC.c_wl == 20 and treeATGC.c_bl == 0)\
+			or (para == 'cb' and treeATGC.c_wwwl == 0 and treeATGC.c_wl == 0 and treeATGC.c_bl == 60):
 		      		pos_hist.Fill(treeATGC.MWW,treeATGC.totEventWeight)
-		    	if (para == 'cwww' and treeATGC.c_wwwl == -par_max[para] and treeATGC.c_wl == 0 and treeATGC.c_bl == 0)\
-			or (para == 'ccw' and treeATGC.c_wwwl == 0 and treeATGC.c_wl == -par_max[para] and treeATGC.c_bl == 0)\
-			or (para == 'cb' and treeATGC.c_wwwl == 0 and treeATGC.c_wl == 0 and treeATGC.c_bl == -par_max[para]):
+		    	if (para == 'cwww' and treeATGC.c_wwwl == -12 and treeATGC.c_wl == 0 and treeATGC.c_bl == 0)\
+			or (para == 'ccw' and treeATGC.c_wwwl == 0 and treeATGC.c_wl == -20 and treeATGC.c_bl == 0)\
+			or (para == 'cb' and treeATGC.c_wwwl == 0 and treeATGC.c_wl == 0 and treeATGC.c_bl == -60):
 		      		neg_hist.Fill(treeATGC.MWW,treeATGC.totEventWeight)
 
 		pos_datahist	= RooDataHist('pos_datahist_%s'%para,'pos_datahist_%s'%para,RooArgList(rrv_mass_lvj),pos_hist)
 		neg_datahist	= RooDataHist('neg_datahist_%s'%para,'neg_datahist_%s'%para,RooArgList(rrv_mass_lvj),neg_hist)
-		N_quad		= RooRealVar('N_quad_%s_%s'%(para,ch),'N_quad_%s_%s'%(para,ch), ((pos_datahist.sumEntries()+neg_datahist.sumEntries())/2)-N_SM.getVal() )
-		N_lin		= RooRealVar('N_lin_%s_%s'%(para,ch),'N_lin_%s_%s'%(para,ch), (pos_datahist.sumEntries()-neg_datahist.sumEntries())/2 )
+#
+		hist4fit.SetBinContent(1,neg_datahist.sumEntries()/N_SM.getVal())
+		hist4fit.SetBinContent(2,1)
+		hist4fit.SetBinContent(3,pos_datahist.sumEntries()/N_SM.getVal())
+		#fit parabel
+		#gROOT.SetBatch(kTRUE)
+		cc1 = TCanvas()
+		cc1.cd()
+		hist4fit.Fit('pol2')
+		print str(pos_datahist.sumEntries()) +"/"+str(SMdatahist.sumEntries())+"/"+ str(neg_datahist.sumEntries())
+		#raw_input("<")
+		#gROOT.SetBatch(kFALSE)
+		fitfunc		= hist4fit.GetFunction('pol2')
+		par0		= RooRealVar('par0_%s_%s_%s'%(para,cat,ch),'par0_%s_%s_%s'%(para,cat,ch),fitfunc.GetParameter(0)); 		par0.setConstant(kTRUE);
+		par1		= RooRealVar('par1_%s_%s_%s'%(para,cat,ch),'par1_%s_%s_%s'%(para,cat,ch),fitfunc.GetParameter(1)); 		par1.setConstant(kTRUE);
+		par2		= RooRealVar('par2_%s_%s_%s'%(para,cat,ch),'par2_%s_%s_%s'%(para,cat,ch),fitfunc.GetParameter(2)); 		par2.setConstant(kTRUE);
+#
+		N_quad		= RooRealVar('N_quad_%s_%s_%s'%(para,cat,ch),'N_quad_%s_%s_%s'%(para,cat,ch), ((pos_datahist.sumEntries()+neg_datahist.sumEntries())/2)-N_SM.getVal() )
+		N_lin		= RooRealVar('N_lin_%s_%s_%s'%(para,cat,ch),'N_lin_%s_%s_%s'%(para,cat,ch), (pos_datahist.sumEntries()-neg_datahist.sumEntries())/2 )
 
 		#scaleshape is the relative change to SM		
-		#scaleshape	= RooFormulaVar('scaleshape_%s_%s'%(para,ch),'scaleshape_%s_%s'%(para,ch),\
-		#				'(@0+@1*@3+@2*@3**2)-1',\
-		#				RooArgList(par0,par1,par2,wtmp.var(para)))			
-		a2		= RooRealVar('a_quad_%s_%s'%(para,ch),'a_quad_%s_%s'%(para,ch),-0.001,-2,0)
+		scaleshape	= RooFormulaVar('scaleshape_%s_%s_%s'%(para,cat,ch),'scaleshape_%s_%s_%s'%(para,cat,ch),\
+						'(@0+@1*@3+@2*@3**2)-1',\
+						RooArgList(par0,par1,par2,wtmp.var(para)))			
+
+		a2		= RooRealVar('a_quad_%s_%s_%s'%(para,cat,ch),'a_quad_%s_%s_%s'%(para,cat,ch),-0.001,-1,0.1)
 		a2.setConstant(kTRUE)
-		cPdf_quad	= RooExponential('Pdf_quad_%s'%para,'Pdf_quad_%s'%para,rrv_mass_lvj,a2)
-		a3		= RooRealVar('a_lin_%s_%s'%(para,ch),'a_lin_%s_%s'%(para,ch),-0.001,-2,0)
+		cPdf_quad	= RooExponential('Pdf_quad_%s_%s_%s'%(para,cat,ch),'Pdf_quad_%s_%s_%s'%(para,cat,ch),rrv_mass_lvj,a2)
+		a3		= RooRealVar('a_lin_%s_%s_%s'%(para,cat,ch),'a_lin_%s_%s_%s'%(para,cat,ch),-0.001,-0.1,0.1)
 		a3.setConstant(kTRUE)
-		cPdf_lin	= RooExponential('Pdf_lin_%s'%para,'Pdf_lin_%s'%para,rrv_mass_lvj,a3)
+		cPdf_lin	= RooExponential('Pdf_lin_%s_%s_%s'%(para,cat,ch),'Pdf_lin_%s_%s_%s'%(para,cat,ch),rrv_mass_lvj,a3)
 
 		getattr(wtmp,'import')(cPdf_quad)
 		getattr(wtmp,'import')(cPdf_lin)
@@ -273,52 +295,84 @@ def make_input(ch = 'ele'):
 		getattr(wtmp,'import')(neg_datahist)
 		getattr(wtmp,'import')(N_quad)
 		getattr(wtmp,'import')(N_lin)
+		getattr(wtmp,'import')(scaleshape)
+
 		wtmp.Print()
-		
+	tmpp='''
+	c1 = TCanvas()
+	c1.cd()
+	wtmp.var("cwww").setRange(-15,15)
+	p1 = wtmp.var("cwww").frame()
+	wtmp.function("scaleshape_cwww_%s_%s"%(cat,ch)).plotOn(p1,RooFit.LineColor(kBlue))
+	p1.Draw()
+	c2 = TCanvas()
+	c2.cd()
+	wtmp.var("ccw").setRange(-30,30)
+	p2 = wtmp.var("ccw").frame()
+	wtmp.function("scaleshape_ccw_%s_%s"%(cat,ch)).plotOn(p2,RooFit.LineColor(kRed))
+	p2.Draw()
+	c3 = TCanvas()
+	c3.cd()
+	wtmp.var("cb").setRange(-90,90)
+	p3 = wtmp.var("cb").frame()
+	wtmp.function("scaleshape_cb_%s_%s"%(cat,ch)).plotOn(p3,RooFit.LineColor(kGreen))
+	p3.Draw()
+	raw_input("SS")'''
+
 
 	#make model
+	if options.lin:
+		paralist	= RooArgList(N_SM)
+		paralist.add(RooArgList(wtmp.function('N_quad_%s_%s_%s'%(POI[0],cat,ch)),wtmp.function('N_lin_%s_%s_%s'%(POI[0],cat,ch)),wtmp.var('cwww'),\
+					wtmp.function('N_quad_%s_%s_%s'%(POI[1],cat,ch)),wtmp.function('N_lin_%s_%s_%s'%(POI[1],cat,ch)),wtmp.var('ccw'),\
+					wtmp.function('N_quad_%s_%s_%s'%(POI[2],cat,ch)),wtmp.function('N_lin_%s_%s_%s'%(POI[2],cat,ch)),wtmp.var('cb')))
+		Pdf_norm	= RooFormulaVar( 'Pdf_norm_%s_%s'%(cat,ch),'Pdf_norm_%s_%s'%(cat,ch),'@0+@1*(@3/12)**2+@2*(@3/12)+@4*(@6/20)**2+@5*(@6/20)+@7*(@9/60)**2+@8*(@9/60)',paralist )
+		paralistN1	= RooArgList(Pdf_norm,N_SM) 
+		paralistN2	= RooArgList(Pdf_norm,paralist.at(1),paralist.at(3))
+		paralistN3	= RooArgList(Pdf_norm,paralist.at(2),paralist.at(3)) 
+		paralistN4	= RooArgList(Pdf_norm,paralist.at(4),paralist.at(6))
+		paralistN5	= RooArgList(Pdf_norm,paralist.at(5),paralist.at(6))
+		paralistN6	= RooArgList(Pdf_norm,paralist.at(7),paralist.at(9))
+		paralistN7	= RooArgList(Pdf_norm,paralist.at(8),paralist.at(9))
 
-	paralist	= RooArgList(N_SM)
-	paralist.add(RooArgList(wtmp.function('N_quad_%s_%s'%(POI[0],ch)),wtmp.function('N_lin_%s_%s'%(POI[0],ch)),wtmp.function(POI[0]+str(par_max[POI[0]])),\
-				wtmp.function('N_quad_%s_%s'%(POI[1],ch)),wtmp.function('N_lin_%s_%s'%(POI[1],ch)),wtmp.function(POI[1]+str(par_max[POI[1]])),\
-				wtmp.function('N_quad_%s_%s'%(POI[2],ch)),wtmp.function('N_lin_%s_%s'%(POI[2],ch)), wtmp.function(POI[2]+str(par_max[POI[2]]))))
+		N1		= RooFormulaVar( 'N1_%s_%s'%(cat,ch),'N1_%s_%s'%(cat,ch),'@1/@0',paralistN1 )
+		N2		= RooFormulaVar( 'N2_%s_%s'%(cat,ch),'N2_%s_%s'%(cat,ch),'(@1*(@2/12)**2)/@0',paralistN2 )
+		N3		= RooFormulaVar( 'N3_%s_%s'%(cat,ch),'N3_%s_%s'%(cat,ch),'(@1*(@2/12))/@0',paralistN3 )
+		N4		= RooFormulaVar( 'N4_%s_%s'%(cat,ch),'N4_%s_%s'%(cat,ch),'(@1*(@2/20)**2)/@0',paralistN4 )
+		N5		= RooFormulaVar( 'N5_%s_%s'%(cat,ch),'N5_%s_%s'%(cat,ch),'(@1*(@2/20))/@0',paralistN5 )
+		N6		= RooFormulaVar( 'N6_%s_%s'%(cat,ch),'N6_%s_%s'%(cat,ch),'(@1*(@2/60)**2)/@0',paralistN6 )
+		N7		= RooFormulaVar( 'N7_%s_%s'%(cat,ch),'N7_%s_%s'%(cat,ch),'(@1*(@2/60))/@0',paralistN7 )
+	
 
-	N1		= RooFormulaVar('N1','N1','@0/(@0+@1*@3**2+@2*@3+@4*@6**2+@5*@6+@7*@9**2+@8*@9)',paralist)
-	N2		= RooFormulaVar('N2','N2','(@1*@3**2)/(@0+@1*@3**2+@2*@3+@4*@6**2+@5*@6+@7*@9**2+@8*@9)',paralist)
-	N3		= RooFormulaVar('N3','N3','(@2*@3)/(@0+@1*@3**2+@2*@3+@4*@6**2+@5*@6+@7*@9**2+@8*@9)',paralist)
-	N4		= RooFormulaVar('N4','N4','(@4*@6**2)/(@0+@1*@3**2+@2*@3+@4*@6**2+@5*@6+@7*@9**2+@8*@9)',paralist)
-	N5		= RooFormulaVar('N5','N5','(@5*@6)/(@0+@1*@3**2+@2*@3+@4*@6**2+@5*@6+@7*@9**2+@8*@9)',paralist)
-	N6		= RooFormulaVar('N6','N6','(@7*@9**2)/(@0+@1*@3**2+@2*@3+@4*@6**2+@5*@6+@7*@9**2+@8*@9)',paralist)
-	N7		= RooFormulaVar('N7','N7','(@8*@9)/(@0+@1*@3**2+@2*@3+@4*@6**2+@5*@6+@7*@9**2+@8*@9)',paralist)
+		N_list		= RooArgList(N1,N2,N3,N4,N5,N6,N7)
+		Pdf_list	= RooArgList(SMPdf,
+						wtmp.pdf('Pdf_quad_%s_%s_%s'%(POI[0],cat,ch)),wtmp.pdf('Pdf_lin_%s_%s_%s'%(POI[0],cat,ch)),\
+						wtmp.pdf('Pdf_quad_%s_%s_%s'%(POI[1],cat,ch)),wtmp.pdf('Pdf_lin_%s_%s_%s'%(POI[1],cat,ch)),\
+						wtmp.pdf('Pdf_quad_%s_%s_%s'%(POI[2],cat,ch)),wtmp.pdf('Pdf_lin_%s_%s_%s'%(POI[2],cat,ch)))
+	else:
+
+		paralist	= RooArgList(N_SM,wtmp.function('N_quad_%s_%s_%s'%(POI[0],cat,ch)),wtmp.var('cwww'),\
+						wtmp.function('N_quad_%s_%s_%s'%(POI[1],cat,ch)),wtmp.var('ccw'),\
+						wtmp.function('N_quad_%s_%s_%s'%(POI[2],cat,ch)),wtmp.var('cb'))
+		N1		= RooFormulaVar( 'N1_%s_%s'%(cat,ch),'N1_%s_%s'%(cat,ch),'@0/(@0+@1*(@2/12)**2+@3*(@4/20)**2+@5*(@6/60)**2)',paralist)
+		N2		= RooFormulaVar( 'N2_%s_%s'%(cat,ch),'N2_%s_%s'%(cat,ch),'@1*(@2/12)**2/(@0+@1*(@2/12)**2+@3*(@4/20)**2+@5*(@6/60)**2)',paralist)
+		N3		= RooFormulaVar( 'N3_%s_%s'%(cat,ch),'N3_%s_%s'%(cat,ch),'@3*(@4/20)**2/(@0+@1*(@2/12)**2+@3*(@4/20)**2+@5*(@6/60)**2)',paralist)
+		N4		= RooFormulaVar( 'N4_%s_%s'%(cat,ch),'N4_%s_%s'%(cat,ch),'@5*(@6/60)**2/(@0+@1*(@2/12)**2+@3*(@4/20)**2+@5*(@6/60)**2)',paralist)
+
+		N_list		= RooArgList(N1,N2,N3,N4)
+		Pdf_list	= RooArgList(SMPdf,wtmp.pdf('Pdf_quad_%s_%s_%s'%(POI[0],cat,ch)),wtmp.pdf('Pdf_quad_%s_%s_%s'%(POI[1],cat,ch)),wtmp.pdf('Pdf_quad_%s_%s_%s'%(POI[2],cat,ch)))
 
 
-	N_list		= RooArgList(N1,N2,N3,N4,N5,N6,N7)
-	Pdf_list	= RooArgList(SMPdf,
-					wtmp.pdf('Pdf_quad_%s'%POI[0]),wtmp.pdf('Pdf_lin_%s'%POI[0]),\
-					wtmp.pdf('Pdf_quad_%s'%POI[1]),wtmp.pdf('Pdf_lin_%s'%POI[1]),\
-					wtmp.pdf('Pdf_quad_%s'%POI[2]),wtmp.pdf('Pdf_lin_%s'%POI[2]))
 	model		= RooAddPdf('aTGC_model','aTGC_model', Pdf_list, N_list)
 	model.Print()
 
-	filescale	= TFile.Open('Input/TF3-fit-%s.root'%ch[:2])
-	scale_tf3	= filescale.Get("TF3_fit_%s"%ch[:2])
-	par0		= RooRealVar('par0','par0',scale_tf3.GetParameter(0))
-	par1		= RooRealVar('par1','par1',scale_tf3.GetParameter(1))
-	par2 		= RooRealVar('par2','par2',scale_tf3.GetParameter(2))
-	par3		= RooRealVar('par3','par3',scale_tf3.GetParameter(3))
-	par4		= RooRealVar('par4','par4',scale_tf3.GetParameter(4))
-	par5		= RooRealVar('par5','par5',scale_tf3.GetParameter(5))
-	par6		= RooRealVar('par6','par6',scale_tf3.GetParameter(6))
-	par7		= RooRealVar('par7','par7',scale_tf3.GetParameter(7))
-	par8		= RooRealVar('par8','par8',scale_tf3.GetParameter(8))
-	par9		= RooRealVar('par9','par9',scale_tf3.GetParameter(9))
+	scale_list	= RooArgList(wtmp.function('scaleshape_%s_%s_%s'%(POI[0],cat,ch)),\
+					wtmp.function('scaleshape_%s_%s_%s'%(POI[1],cat,ch)),\
+					wtmp.function('scaleshape_%s_%s_%s'%(POI[2],cat,ch)))
+	normfactor_3d	= RooFormulaVar('normfactor_3d_%s_%s'%(cat,ch),'normfactor_3d_%s_%s'%(cat,ch),'1+@0+@1+@2',scale_list)
 
-	par_list	= RooArgList(par0,par1,par2,par3,par4)
-	par_list.add(RooArgList(par5,par6,par7,par8,par9))
-	par_list.add(RooArgList(cwww,ccw,cb))
 
-	normfactor_3d	= RooFormulaVar('normfactor_3d_%s'%ch,'normfactor_3d_%s'%ch,'@0+@1*@10+@2*@10**2+@3*@11+@4*@11**2+@5*@12+@6*@12**2+@7*@10*@11+@8*@10*@12+@9*@11*@12',par_list)
-					
+
 	getattr(WS,'import')(normfactor_3d)	
 	getattr(wtmp,'import')(normfactor_3d)	
 	wtmp.Print()
@@ -328,12 +382,14 @@ def make_input(ch = 'ele'):
 	for i in range(3):
 		wtmp.var(POI[0]).setVal(0); wtmp.var(POI[1]).setVal(0); wtmp.var(POI[2]).setVal(0);
 		wtmp.var(POI[i]).setVal(-par_max[POI[i]])
-		wtmp.var('a_quad_%s_%s'%(POI[i],ch)).setConstant(kFALSE)
-		wtmp.var('a_lin_%s_%s'%(POI[i],ch)).setConstant(kFALSE)
+		wtmp.var('a_quad_%s_%s_%s'%(POI[i],cat,ch)).setConstant(kFALSE)
+		wtmp.var('a_lin_%s_%s_%s'%(POI[i],cat,ch)).setConstant(kFALSE)
 		fitres		= model.fitTo(wtmp.data('neg_datahist_%s'%POI[i]),RooFit.Save(kTRUE), RooFit.SumW2Error(kTRUE))
 		fitresults.append(fitres)
-		wtmp.var('a_quad_%s_%s'%(POI[i],ch)).setConstant(kTRUE)
-		wtmp.var('a_lin_%s_%s'%(POI[i],ch)).setConstant(kTRUE)
+		wtmp.var('a_quad_%s_%s_%s'%(POI[i],cat,ch)).setConstant(kTRUE)
+		wtmp.var('a_lin_%s_%s_%s'%(POI[i],cat,ch)).setConstant(kTRUE)
+
+
 	for i in range(3):
 		fitresults[i].Print()
 
@@ -341,7 +397,7 @@ def make_input(ch = 'ele'):
 	getattr(wtmp,'import')(model)
 
 	if options.do_plots:
-		make_plots(rrv_mass_lvj,wtmp,ch)
+		make_plots(rrv_mass_lvj,wtmp,ch,cat)
 	if options.do_plots2:
 		#cross check
 		canvas		= TCanvas(POI[0]+','+POI[1]+','+POI[2] , POI[0]+','+POI[1]+','+POI[2],1)
@@ -409,13 +465,13 @@ def make_input(ch = 'ele'):
 	getattr(WS,'import')(model)
 
 	path	='/afs/cern.ch/work/c/crenner/CMSSW_7_1_5/src/CombinedEWKAnalysis/CommonTools/data/anomalousCoupling'
-	output 	= TFile('%s/ch_%s_%s.root'%(path,cat,ch),'recreate')
+	output 	= TFile('%s/%s_%s.root'%(path,cat,ch),'recreate')
 
 	data_obs.Write()
-	WS.SetName('workspace'); WS.Print(); WS.Write();
+	WS.SetName('w'); WS.Print(); WS.Write();
 	output.Close()
 	print 'Write to file ' + output.GetName()
 
   
-make_input('ele')
+make_input('el')
 make_input('mu')
