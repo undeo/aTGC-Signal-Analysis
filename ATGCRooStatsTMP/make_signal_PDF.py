@@ -3,9 +3,10 @@ from array import array
 from optparse import OptionParser
 import math as math
 import random
+import os
 
 #change this!
-gSystem.Load('/afs/cern.ch/work/c/crenner/CMSSW_7_1_5/lib/slc6_amd64_gcc481/libHiggsAnalysisCombinedLimit.so')
+gSystem.Load('%s/lib/slc6_amd64_gcc481/libHiggsAnalysisCombinedLimit.so'%os.environ['CMSSW_BASE'])
 
 from ROOT import RooErfExpPdf, RooAlpha, RooAlpha4ErfPowPdf, RooAlpha4ErfPow2Pdf, RooAlpha4ErfPowExpPdf, RooPowPdf, RooPow2Pdf, RooErfPowExpPdf, RooErfPowPdf, RooErfPow2Pdf, RooQCDPdf, RooUser1Pdf, RooBWRunPdf, RooAnaExpNPdf, RooExpNPdf, RooAlpha4ExpNPdf, RooExpTailPdf, RooAlpha4ExpTailPdf, Roo2ExpPdf, RooAlpha42ExpPdf
 
@@ -141,7 +142,6 @@ def make_plots(rrv_x,wtmp,ch,cat):
 					      RooFit.Normalization(normvalSM, RooAbsReal.NumEvent))
 		wtmp.var(POI[i]).setVal(-par_max[POI[i]])
 		normval		= wtmp.function('normfactor_3d_%s_%s'%(cat,ch)).getVal() * wtmp.data('SMdatahist').sumEntries()
-
         	wtmp.pdf('aTGC_model').plotOn(plots[i],\
 					      RooFit.LineColor(kBlue),\
 					      RooFit.Normalization(normval, RooAbsReal.NumEvent))
@@ -243,7 +243,6 @@ def make_input(ch = 'el',binlo=900,binhi=3500):
 	getattr(wtmp,'import')(cwww);
 	getattr(wtmp,'import')(ccw);
 	getattr(wtmp,'import')(cb);
-	getattr(wtmp,'import')(a1)
 
 	#make and fill SM histogram, SM fit
 	SMhist		= TH1F('SMhist','SMhist',nbins4fit,binlo,binhi)
@@ -298,7 +297,6 @@ def make_input(ch = 'el',binlo=900,binhi=3500):
 		hist4fit.SetBinContent(2,1)
 		hist4fit.SetBinContent(3,pos_datahist.sumEntries()/N_SM.getVal())
 		#fit parabel
-		gROOT.SetBatch(True)
 		hist4fit.Fit('pol2')
 		fitfunc		= hist4fit.GetFunction('pol2')
 		par0		= RooRealVar('par0_%s_%s_%s'%(para,cat,ch),'par0_%s_%s_%s'%(para,cat,ch),fitfunc.GetParameter(0)); 		par0.setConstant(kTRUE);
@@ -364,7 +362,6 @@ def make_input(ch = 'el',binlo=900,binhi=3500):
 	model.Print()	
 	getattr(wtmp,'import')(model)
 
-
 	#make plots
 	if options.do_plots:
 		make_plots(rrv_mass_lvj,wtmp,ch,cat)
@@ -393,7 +390,7 @@ def make_input(ch = 'el',binlo=900,binhi=3500):
 	getattr(WS,'import')(model)
 
 	#change this!
-	path	='/afs/cern.ch/work/c/crenner/CMSSW_7_1_5/src/CombinedEWKAnalysis/CommonTools/data/anomalousCoupling'
+	path	='%s/src/CombinedEWKAnalysis/CommonTools/data/anomalousCoupling'%os.environ['CMSSW_BASE']
 	output 	= TFile('%s/%s_%s.root'%(path,cat,ch),'recreate')
 
 	data_obs.Write()
@@ -401,7 +398,6 @@ def make_input(ch = 'el',binlo=900,binhi=3500):
 	output.Close()
 	print 'Write to file ' + output.GetName()
 
-#gROOT.SetBatch() 
 make_input('el')
 make_input('mu')
 
