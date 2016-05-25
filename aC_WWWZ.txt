@@ -1,0 +1,84 @@
+Combination of aC_WW_el.txt  aC_WW_mu.txt  aC_WZ_el.txt  aC_WZ_mu.txt
+imax 4 number of bins
+jmax 6 number of processes minus 1
+kmax 43 number of nuisance parameters
+----------------------------------------------------------------------------------------------------------------------------------
+shapes ATGCPdf_WW_el  ch1            WW_el_ws.root proc_WW_el:$PROCESS
+shapes STop           ch1            WW_el_ws.root proc_WW_el:$PROCESS
+shapes TTbar          ch1            WW_el_ws.root proc_WW_el:$PROCESS
+shapes WJets          ch1            WW_el_ws.root proc_WW_el:$PROCESS
+shapes data_obs       ch1            WW_el_ws.root proc_WW_el:$PROCESS
+shapes ATGCPdf_WW_mu  ch2            WW_mu_ws.root proc_WW_mu:$PROCESS
+shapes STop           ch2            WW_mu_ws.root proc_WW_mu:$PROCESS
+shapes TTbar          ch2            WW_mu_ws.root proc_WW_mu:$PROCESS
+shapes WJets          ch2            WW_mu_ws.root proc_WW_mu:$PROCESS
+shapes data_obs       ch2            WW_mu_ws.root proc_WW_mu:$PROCESS
+shapes ATGCPdf_WZ_el  ch3            WZ_el_ws.root proc_WZ_el:$PROCESS
+shapes STop           ch3            WZ_el_ws.root proc_WZ_el:$PROCESS
+shapes TTbar          ch3            WZ_el_ws.root proc_WZ_el:$PROCESS
+shapes WJets          ch3            WZ_el_ws.root proc_WZ_el:$PROCESS
+shapes data_obs       ch3            WZ_el_ws.root proc_WZ_el:$PROCESS
+shapes ATGCPdf_WZ_mu  ch4            WZ_mu_ws.root proc_WZ_mu:$PROCESS
+shapes STop           ch4            WZ_mu_ws.root proc_WZ_mu:$PROCESS
+shapes TTbar          ch4            WZ_mu_ws.root proc_WZ_mu:$PROCESS
+shapes WJets          ch4            WZ_mu_ws.root proc_WZ_mu:$PROCESS
+shapes data_obs       ch4            WZ_mu_ws.root proc_WZ_mu:$PROCESS
+----------------------------------------------------------------------------------------------------------------------------------
+bin          ch1          ch2          ch3          ch4        
+observation  -1.0         -1.0         -1.0         -1.0       
+----------------------------------------------------------------------------------------------------------------------------------
+bin                                            ch1            ch1            ch1            ch1            ch2            ch2            ch2            ch2            ch3            ch3            ch3            ch3            ch4            ch4            ch4            ch4          
+process                                        ATGCPdf_WW_el  TTbar          STop           WJets          ATGCPdf_WW_mu  STop           TTbar          WJets          ATGCPdf_WZ_el  TTbar          STop           WJets          ATGCPdf_WZ_mu  TTbar          STop           WJets        
+process                                        -3             1              2              3              -2             2              1              3              -1             1              2              3              0              1              2              3            
+rate                                           15.2780        56.3838        10.7760        137.8775       19.7492        21.6811        77.3789        191.2723       10.3100        50.8497        11.8561        113.3164       12.6146        73.8476        13.3011        160.6108     
+----------------------------------------------------------------------------------------------------------------------------------
+BTag                    lnN                    -              1.008          -              -              -              -              1.008          -              -              1.008          -              -              -              1.008          -              -            
+CMS_eff_vtag_tau21_sf_13TeV   lnN              1.126/0.874    -              -              -              1.126/0.874    -              -              -              1.126/0.874    -              -              -              1.126/0.874    -              -              -            
+CMS_xww_WJ_norm_13TeV   lnN                    -              -              -              1.071          -              -              -              1.075          -              -              -              1.107          -              -              -              1.066        
+CMS_xww_XS_STop_13TeV   lnN                    -              -              1.05           -              -              1.05           -              -              -              -              1.05           -              -              -              1.05           -            
+CMS_xww_XS_VV_13Te      lnN                    1.03           -              -              -              1.03           -              -              -              1.03           -              -              -              1.03           -              -              -            
+CMS_xww_lumi_13TeV      lnN                    1.046          1.046          1.046          -              1.046          1.046          1.046          -              1.046          1.046          1.046          -              1.046          1.046          1.046          -            
+JEC                     lnN                    1.02           1.023          1.021          1.02           1.016          -              1.027          1.019          1.02           1.023          1.021          1.02           1.016          1.027          -              1.019        
+JER                     lnN                    -              -              -              -              -              1.001          -              -              -              -              -              -              -              -              1.001          -            
+LeptonEn                lnN                    -              1.001          -              1.002          1.006          1.001          1.01           1.012          -              1.001          -              1.002          1.006          1.01           1.001          1.012        
+PDF                     lnN                    1.027          1.025          1.007          1.027          1.019          1.006          1.026          1.027          1.027          1.025          -              1.027          1.019          1.026          1.006          1.027        
+Scale                   lnN                    1.058          1.035          1.028          -              1.06           1.031          1.035          -              1.058          1.035          1.028          -              1.06           1.035          1.031          -            
+UnclEn                  lnN                    1.005          1.001          -              1.003          0.992          0.992          -              1.003          1.005          1.001          -              1.003          0.992          -              0.992          1.003        
+Deco_WJets0_xww_sb_lo_from_fitting_el_HP_mlvj_13TeV_eig0  param  0.0 1.4
+Deco_WJets0_xww_sb_lo_from_fitting_el_HP_mlvj_13TeV_eig1  param  0.0 1.4
+Deco_WJets0_xww_sb_lo_from_fitting_el_HP_mlvj_13TeV_eig2  param  0.0 1.4
+Deco_TTbar_xww_signal_region_el_HPW_mlvj_13TeV_eig0  param  0.0 2.0
+Deco_TTbar_xww_signal_region_el_HPW_mlvj_13TeV_eig1  param  0.0 2.0
+Deco_WJets0_xww_sim_el_HPW_mlvj_13TeV_eig0  param  0.0 1.4
+Deco_WJets0_xww_sim_el_HPW_mlvj_13TeV_eig1  param  0.0 1.4
+Deco_WJets0_xww_sim_el_HPW_mlvj_13TeV_eig2  param  0.0 1.4
+Deco_WJets0_xww_sim_el_HPW_mlvj_13TeV_eig3  param  0.0 1.4
+Deco_TTbar_xww_signal_region_el_HPZ_mlvj_13TeV_eig0  param  0.0 2.0
+Deco_TTbar_xww_signal_region_el_HPZ_mlvj_13TeV_eig1  param  0.0 2.0
+Deco_WJets0_xww_sim_el_HPZ_mlvj_13TeV_eig0  param  0.0 1.4
+Deco_WJets0_xww_sim_el_HPZ_mlvj_13TeV_eig1  param  0.0 1.4
+Deco_WJets0_xww_sim_el_HPZ_mlvj_13TeV_eig2  param  0.0 1.4
+Deco_WJets0_xww_sim_el_HPZ_mlvj_13TeV_eig3  param  0.0 1.4
+Deco_TTbar_xww_signal_region_mu_HPW_mlvj_13TeV_eig0  param  0.0 2.0
+Deco_TTbar_xww_signal_region_mu_HPW_mlvj_13TeV_eig1  param  0.0 2.0
+Deco_WJets0_xww_sim_mu_HPW_mlvj_13TeV_eig0  param  0.0 1.4
+Deco_WJets0_xww_sim_mu_HPW_mlvj_13TeV_eig1  param  0.0 1.4
+Deco_WJets0_xww_sim_mu_HPW_mlvj_13TeV_eig2  param  0.0 1.4
+Deco_WJets0_xww_sim_mu_HPW_mlvj_13TeV_eig3  param  0.0 1.4
+Deco_TTbar_xww_signal_region_mu_HPZ_mlvj_13TeV_eig1  param  0.0 2.0
+Deco_TTbar_xww_signal_region_mu_HPZ_mlvj_13TeV_eig0  param  0.0 2.0
+Deco_WJets0_xww_sim_mu_HPZ_mlvj_13TeV_eig0  param  0.0 1.4
+Deco_WJets0_xww_sim_mu_HPZ_mlvj_13TeV_eig1  param  0.0 1.4
+Deco_WJets0_xww_sim_mu_HPZ_mlvj_13TeV_eig2  param  0.0 1.4
+Deco_WJets0_xww_sim_mu_HPZ_mlvj_13TeV_eig3  param  0.0 1.4
+Deco_WJets0_xww_sb_lo_from_fitting_mu_HP_mlvj_13TeV_eig2  param  0.0 1.4
+Deco_WJets0_xww_sb_lo_from_fitting_mu_HP_mlvj_13TeV_eig1  param  0.0 1.4
+Deco_WJets0_xww_sb_lo_from_fitting_mu_HP_mlvj_13TeV_eig0  param  0.0 1.4
+slope_nuis    param  1.0 0.05
+
+
+
+
+
+
+
