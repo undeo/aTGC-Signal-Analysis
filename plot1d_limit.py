@@ -13,6 +13,7 @@ gStyle.SetOptStat(0)
 gStyle.SetOptTitle(0)
 parser	= OptionParser()
 parser.add_option('--POI',dest='POI',help='parameter of interest')
+parser.add_option('--mode',dest='mode',help='std, lin or linter')
 (options,args) = parser.parse_args()
 
 POI	= options.POI
@@ -20,7 +21,7 @@ pval	= 0
 
 
 def plots():
-	wsname		= 'higgsCombine1Par_%s%s.MultiDimFit.mH120.root'%(POI,pval)
+	wsname		= 'higgsCombine1Par_%s_%s%s.MultiDimFit.mH120.root'%(options.mode,POI,pval)
 	print wsname
 	fileInATGC	= TFile.Open(wsname)
 	tree		= fileInATGC.Get('limit')
@@ -28,47 +29,33 @@ def plots():
 
 
 	tree.GetEntry(1)	
-	if 'cwww' in wsname:
-		par		= 'cwww'
-		binlo		= int(tree.cwww)-1
-		tree.GetEntry(NEntries-1)
-		binhi		= int(tree.cwww)+1
-	elif 'ccw' in wsname:
-		par		= 'ccw'
-		binlo		= int(tree.ccw)-1
-		tree.GetEntry(NEntries-1)
-		binhi		= int(tree.ccw)+1
-	elif 'cb' in wsname:
-		par		= 'cb'
-		binlo		= int(tree.cb)-1
-		tree.GetEntry(NEntries-1)
-		binhi		= int(tree.cb)+1
 
-
-	hist		= TH1F('hist','hist',NEntries,binlo,binhi)
+	par		= POI
 	
+	x	= []
+	y	= []
 
 	for i in range(NEntries-1):
 		if i%1000==0:
 			print i
 		tree.GetEntry(i+1)
-		if 2*tree.deltaNLL < 150:
-			hist.Fill(tree.GetLeaf(par).GetValue(),2*tree.deltaNLL)
-		else:
-			hist.Fill(tree.GetLeaf(par).GetValue(),-1000)
+		if 2*tree.deltaNLL < 4.5:
+			x.append(tree.GetLeaf(par).GetValue())
+			y.append(2*tree.deltaNLL)
 
-	line4		= TF1('line4','3.84',binlo-1,binhi+1)
-	line4.SetLineStyle(kDashed)
-	line4.SetLineWidth(4)
-	c1		= TCanvas('c1','c1',1)
-	hist.SetMarkerStyle(8)
-	hist.SetMarkerSize(0.5)
+	graph	= TGraph(len(x),array('d',x),array('d',y))
+
+	line4		= TF1('line4','3.84',graph.GetXaxis().GetXmin(),graph.GetXaxis().GetXmax())
+	line4.SetLineStyle(7)
+	line4.SetLineColor(kBlack)
+	line4.SetLineWidth(1)
+	c1		= TCanvas()
 	if par == 'cwww':
-		hist.GetXaxis().SetTitle('c_{WWW} / \Lambda ^2 (1/ TeV ^2)')
+		graph.GetXaxis().SetTitle('c_{WWW} / #Lambda^{2} (TeV^{-2})')
 	if par == 'ccw':
-		hist.GetXaxis().SetTitle('c_{W} / \Lambda ^2 (1/ TeV ^2)')
+		graph.GetXaxis().SetTitle('c_{W} / #Lambda^{2} (TeV^{-2})')
 	if par == 'cb':
-		hist.GetXaxis().SetTitle('c_{B} / \Lambda ^2 (1/ TeV ^2)')
+		graph.GetXaxis().SetTitle('c_{B} / #Lambda^{2} (TeV^{-2})')
 
 	for i in range(NEntries/2):
 		j=i+1
@@ -87,38 +74,26 @@ def plots():
 			limhi = tree.GetLeaf(par).GetValue()
 			break
 
-	linelo = TLine(limlo,-0.1,limlo,hist.GetMaximum())
-	linelo.SetLineStyle(kDashed)
-	linelo.SetLineWidth(4)
-	linelo.SetLineColor(kRed)
-	linehi = TLine(limhi,-0.1,limhi,hist.GetMaximum())
-	linehi.SetLineStyle(kDashed)
-	linehi.SetLineColor(kRed)
-	linehi.SetLineWidth(4)
-	hist.GetYaxis().SetTitle('2*deltaNLL')
+	linelo = TLine(limlo,graph.GetYaxis().GetXmin(),limlo,graph.GetYaxis().GetXmax())
+	linehi = TLine(limhi,graph.GetYaxis().GetXmin(),limhi,graph.GetYaxis().GetXmax())
+	linelo.SetLineStyle(7)
+	linehi.SetLineStyle(7)
+	graph.GetYaxis().SetTitle('2#DeltaNLL')
+	graph.GetYaxis().SetTitleSize(0.05)
+	graph.GetYaxis().SetTitleOffset(0.75)
 	#hist.GetYaxis().SetRangeUser(0,4.2)
 	#hist.GetXaxis().SetRangeUser(10,14.5)
-	hist.SetMinimum(-0.1)
-	hist.Draw('p')
+	graph.SetLineWidth(2)
+	graph.Draw()
 	line4.Draw('SAME')
 	linelo.Draw('SAME')
 	linehi.Draw('SAME')
 	c1.Update()
-
-	error = (float(binhi) - float(binlo))/float(NEntries-2)
+	c1.SaveAs("limitplots/1dlimit_%s.pdf"%POI)
+	c1.SaveAs("limitplots/1dlimit_%s.png"%POI)
+	error = (float(x[1]) - float(x[0]))
 
 	print '95%% C.L. limit on %s: [%s,%s] +- %s'%(par,round(limlo,2),round(limhi,2),round(error,2))
-
-	tree.GetEntry(751)
-	print tree.cwww
-	print tree.deltaNLL
-	tree.GetEntry(750)
-	print tree.cwww
-	print tree.deltaNLL
-	tree.GetEntry(752)
-	print tree.cwww
-	print tree.deltaNLL
-
 
 	raw_input('<>')
 

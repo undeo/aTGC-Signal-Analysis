@@ -122,16 +122,15 @@ NSigBkg_corr_unc_int=0
 
 basepath = '%s/src/CombinedEWKAnalysis/CommonTools/data/anomalousCoupling'%os.environ['CMSSW_BASE']
 
-
 for section in fit_sections:
     #@#
     check_channel = TString(section)
-    if check_channel.Contains("_WW"):
+    if check_channel.Contains("WW"):
       cat = "WW"
-    elif check_channel.Contains("_WZ"):
+    elif check_channel.Contains("WZ"):
       cat = "WZ"
-    if check_channel.Contains("_ele"):
-      ch = "ele"
+    if check_channel.Contains("_el"):
+      ch = "el"
     elif check_channel.Contains("_mu"):
       ch = "mu"
     #@#
@@ -141,11 +140,15 @@ for section in fit_sections:
     f = TFile('%s/%s.root'%(basepath,codename))
 
     #@# get old workspace4limit_ and rename rrv_mass_lvj
-    oldWS = f.Get("workspace")
+    oldWS = f.Get("w")
     old_obs = oldWS.var("rrv_mass_lvj")
     old_obs.setVal(2000)
-    old_obs.setRange(1000,3500)
-    old_obs.SetName("observable_%s"%codename)
+    old_obs.setRange(900,3500)
+    old_obs.SetName("observable")
+
+    
+    old_STop = oldWS.var("rrv_c_Exp_STop_xww_signal_region_%s"%ch)
+    old_STop.SetName("rrv_c_Exp_STop_xww_signal_region_%s"%section)
     #@#
     Nbkg = cfg.get(codename,'Nbkg')
     print "Nbkg= ",Nbkg
@@ -163,13 +166,12 @@ for section in fit_sections:
 
     data_obs = f.Get('data_obs')
 
-    aTGCPdf = oldWS.pdf("aTGC_model")
+    aTGCPdf = oldWS.pdf("aTGC_model_%s"%(codename))
     aTGCPdf.Print()
     aTGCPdf.SetName("ATGCPdf_%s"%codename)
+    #get normalisation of SM VV
     norm_sig_sm = oldWS.var("rate_VV").getVal()
 
-    doSignalShape_unc=False
-    doSignalBkg_corr_unc=False
     cfg_items=cfg.items(codename)
 
     #@#
@@ -180,24 +182,15 @@ for section in fit_sections:
     bkgFits = {}
     for i in range(0,Nbkg_int):
         bkgFits[i] = oldWS.pdf(bkg_name[i])
-    norm_obs = data_obs.Integral()
+    #change norm_obs!!!
+    #norm_obs = data_obs.Integral()
+    norm_obs = 1
     #@#
 
     theWS = RooWorkspace('proc_%s'%codename, 'proc_%s'%codename)
     
-    wpt = theWS.factory('observable_%s[%f,%f]' % (codename,data_obs.GetBinLowEdge(1), 
-                                         data_obs.GetBinLowEdge(data_obs.GetNbinsX())+data_obs.GetBinWidth(data_obs.GetNbinsX())))
-
-    binning=array('d',[])
-
-    for i in range(1, data_obs.GetNbinsX()+1):
-        binning.append(data_obs.GetBinLowEdge(i))
-    binning.append(data_obs.GetBinLowEdge(data_obs.GetNbinsX()+1))
-
-
-    bins=RooBinning(len(binning)-1, binning)
-
-    wpt.setBinning(bins)
+    wpt = theWS.factory('observable[%f,%f]' % (old_obs.getMin(), 
+                                         old_obs.getMax()))
 
     if Ndim == 3:
         par1 = theWS.factory('%s[0., %f, %f]' % (par1name, par1low, par1high))
@@ -211,7 +204,7 @@ for section in fit_sections:
     varSet = RooArgSet(wpt)
 
     data 	= RooDataHist('data_obs', 'data_obs_proc_%s'%codename, vars, data_obs)
-    print 'data integral: ',data.Print()
+    #data	= data_obs
  
     getattr(theWS, 'import')(data)
     for i in range(0,Nbkg_int):
@@ -303,7 +296,8 @@ Deco_WJets0_xww_sim_{ch}_HP{cat}_mlvj_13TeV_eig1 param 0.0 1.4
 Deco_WJets0_xww_sim_{ch}_HP{cat}_mlvj_13TeV_eig2 param 0.0 1.4 
 Deco_WJets0_xww_sim_{ch}_HP{cat}_mlvj_13TeV_eig3 param 0.0 1.4
 Deco_TTbar_xww_signal_region_{ch}_HP{cat}_mlvj_13TeV_eig0 param 0.0 2.0
-Deco_TTbar_xww_signal_region_{ch}_HP{cat}_mlvj_13TeV_eig1 param 0.0 2.0""".format(ch=ch[:2],cat=cat[1])
+Deco_TTbar_xww_signal_region_{ch}_HP{cat}_mlvj_13TeV_eig1 param 0.0 2.0
+slope_nuis param 1.0 0.05""".format(ch=ch[:2],cat=cat[1])
     print card
 
     cardfile = open('aC_%s.txt'%(codename),'w')
@@ -314,7 +308,7 @@ Deco_TTbar_xww_signal_region_{ch}_HP{cat}_mlvj_13TeV_eig1 param 0.0 2.0""".forma
 
 #combine Cards
 print '### combining Cards ###'
-print 'combineCards.py aC_ch_WW_ele.txt aC_ch_WW_mu.txt aC_ch_WZ_ele.txt aC_ch_WZ_mu.txt > %s'%(options.ocard)
-os.system('combineCards.py aC_ch_WW_ele.txt aC_ch_WW_mu.txt aC_ch_WZ_ele.txt aC_ch_WZ_mu.txt > %s'%(options.ocard))
+print 'combineCards.py aC_WW_el.txt aC_WW_mu.txt aC_WZ_el.txt aC_WZ_mu.txt > %s'%(options.ocard)
+os.system('combineCards.py aC_WW_el.txt aC_WW_mu.txt aC_WZ_el.txt aC_WZ_mu.txt > %s'%(options.ocard))
 print 'generated Card : %s'%options.ocard
 

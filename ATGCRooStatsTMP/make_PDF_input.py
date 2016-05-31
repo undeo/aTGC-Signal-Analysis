@@ -349,7 +349,7 @@ def make_input(ch = 'el',binlo=900,binhi=3500):
 
 	cat		= signal_category
 	channel		= cat+"_"+ch
-	nbins4fit	= 20
+	nbins4fit	= (binhi-binlo)/100
 	WS		= RooWorkspace("WS")
 
 	#read data
@@ -366,8 +366,10 @@ def make_input(ch = 'el',binlo=900,binhi=3500):
 	#prepare variables, parameters and temporary workspace
 	wtmp		= RooWorkspace('wtmp')
 	fitresults	= []
-	eps		= RooRealVar('slope_nuis','slope_nuis',1,-10,10)
+	##nuisance parameter to change all slope parameters by certain percentage (bigger for cb in WZ-cateogry)
+	eps		= RooRealVar('slope_nuis','slope_nuis',1,0,2)
 	eps.setConstant(kTRUE)
+	eps4cbWZ	= RooFormulaVar('rel_slope_nuis4cbWZ','rel_slope_nuis4cbWZ','1+3*(@0-1)',RooArgList(eps))
 	a1_4fit		= RooRealVar('a_SM_4fit_%s'%channel,'a_SM_4fit_%s'%channel,-0.1,-2,0)
 	a1		= RooFormulaVar('a_SM_%s'%channel,'a_SM_%s'%channel,'@0*@1',RooArgList(a1_4fit,eps))
 	cwww		= RooRealVar('cwww','cwww',0,-120,120);
@@ -376,9 +378,7 @@ def make_input(ch = 'el',binlo=900,binhi=3500):
 	cwww.setConstant(kTRUE);
 	ccw.setConstant(kTRUE);
 	cb.setConstant(kTRUE);
-	getattr(wtmp,'import')(cwww);
-	getattr(wtmp,'import')(ccw);
-	getattr(wtmp,'import')(cb);
+
 
 	#make and fill SM histogram, SM fit
 	SMhist		= TH1F('SMhist','SMhist',nbins4fit,binlo,binhi)
@@ -403,6 +403,10 @@ def make_input(ch = 'el',binlo=900,binhi=3500):
 	N_SM		= RooRealVar('N_SM_%s'%channel,'N_SM_%s'%channel,SMdatahist.sumEntries())
 	N_SM.setConstant(kTRUE)
 
+	getattr(wtmp,'import')(cwww);
+	getattr(wtmp,'import')(ccw);
+	getattr(wtmp,'import')(cb);
+	getattr(wtmp,'import')(eps4cbWZ)
 	getattr(wtmp,'import')(SMdatahist)
 	getattr(wtmp,'import')(N_SM)
 
@@ -462,20 +466,32 @@ def make_input(ch = 'el',binlo=900,binhi=3500):
 						'(@0+@1*@3+@2*@3**2)-1',\
 						RooArgList(par0,par1,par2,wtmp.var(para)))			
 		
-		a2_4fit		= RooRealVar('a_quad_4fit_%s_%s'%(para,channel),'a_quad_4fit_%s_%s'%(para,channel),-0.001,-1,-0.00001)
-		a2		= RooFormulaVar('a_quad_nuis_%s_%s'%(para,channel),'a_quad_nuis_%s_%s'%(para,channel),'@0*@1',RooArgList(a2_4fit,eps))
+		a2_4fit		= RooRealVar('a_quad_4fit_%s_%s'%(para,channel),'a_quad_4fit_%s_%s'%(para,channel),-0.001,-0.01,0.)
+		a3_4fit		= RooRealVar('a_lin_4fit_%s_%s'%(para,channel),'a_lin_4fit_%s_%s'%(para,channel),-0.001,-0.01,0.)
 		a2_4fit.setConstant(kTRUE)
-		cPdf_quad	= RooExponential('Pdf_quad_%s_%s'%(para,channel),'Pdf_quad_%s_%s'%(para,channel),rrv_mass_lvj,a2)
-		a3_4fit		= RooRealVar('a_lin_4fit_%s_%s'%(para,channel),'a_lin_4fit_%s_%s'%(para,channel),-0.001,-0.01,-0.00001)
-		a3		= RooFormulaVar('a_lin_nuis_%s_%s'%(para,channel),'a_lin_nuis_%s_%s'%(para,channel),'@0*@1',RooArgList(a3_4fit,eps))
 		a3_4fit.setConstant(kTRUE)
+		##bigger uncertainty for cb in WZ-category
+		if cat=='WZ' and para=='cb':
+			a2		= RooFormulaVar('a_quad_nuis_%s_%s'%(para,channel),'a_quad_nuis_%s_%s'%(para,channel),'@0*@1',RooArgList(a2_4fit,eps4cbWZ))
+			a3		= RooFormulaVar('a_lin_nuis_%s_%s'%(para,channel),'a_lin_nuis_%s_%s'%(para,channel),'@0*@1',RooArgList(a3_4fit,eps4cbWZ))
+		else:
+			a2		= RooFormulaVar('a_quad_nuis_%s_%s'%(para,channel),'a_quad_nuis_%s_%s'%(para,channel),'@0*@1',RooArgList(a2_4fit,eps))
+			a3		= RooFormulaVar('a_lin_nuis_%s_%s'%(para,channel),'a_lin_nuis_%s_%s'%(para,channel),'@0*@1',RooArgList(a3_4fit,eps))
+		cPdf_quad	= RooExponential('Pdf_quad_%s_%s'%(para,channel),'Pdf_quad_%s_%s'%(para,channel),rrv_mass_lvj,a2)
 		cPdf_lin	= RooExponential('Pdf_lin_%s_%s'%(para,channel),'Pdf_lin_%s_%s'%(para,channel),rrv_mass_lvj,a3)
+		if cat=='WZ' and para=='cb':
+			a2.Print()
+			a3.Print()
+			cPdf_quad.Print()
+			cPdf_lin.Print()
 
-		getattr(wtmp,'import')(cPdf_quad)
-		getattr(wtmp,'import')(cPdf_lin)
+
+		getattr(wtmp,'import')(cPdf_quad,RooFit.RecycleConflictNodes())
+		getattr(wtmp,'import')(cPdf_lin,RooFit.RecycleConflictNodes())
 		getattr(wtmp,'import')(N_quad)
 		getattr(wtmp,'import')(N_lin)
 		getattr(wtmp,'import')(scaleshape)
+
 
 		wtmp.Print()
 
@@ -545,48 +561,76 @@ def make_input(ch = 'el',binlo=900,binhi=3500):
 
 	#include SM- and aTGC-interference
 	if options.linter:
+		#get ratio WW/WZ in WW- and WZ-category for each aTGC-parameter
+		WWinWW,WZinWW,WWinWZ,WZinWZ = 0,0,0,0
+		fileInWWinWW	= TFile.Open('Output/ATGC-Tree_WW_lo_%s.root'%ch)
+		treeInWWinWW	= fileInWWinWW.Get('BasicTree')
+		for i in range(treeInWWinWW.GetEntries()):
+			treeInWWinWW.GetEntry(i)
+			WWinWW		+= treeInWWinWW.totEventWeight
+		fileInWWinWZ	= TFile.Open('Output/ATGC-Tree_WW_hi_%s.root'%ch)
+		treeInWWinWZ	= fileInWWinWZ.Get('BasicTree')
+		for i in range(treeInWWinWZ.GetEntries()):
+			treeInWWinWZ.GetEntry(i)
+			WWinWZ		+= treeInWWinWZ.totEventWeight
+		fileInWZinWW	= TFile.Open('Output/ATGC-Tree_WZ_lo_%s.root'%ch)
+		treeInWZinWW	= fileInWZinWW.Get('BasicTree')
+		for i in range(treeInWZinWW.GetEntries()):
+			treeInWZinWW.GetEntry(i)
+			WZinWW		+= treeInWZinWW.totEventWeight
+		fileInWZinWZ	= TFile.Open('Output/ATGC-Tree_WZ_hi_%s.root'%ch)
+		treeInWZinWZ	= fileInWZinWZ.Get('BasicTree')
+		for i in range(treeInWZinWZ.GetEntries()):
+			treeInWZinWZ.GetEntry(i)
+			WZinWZ		+= treeInWZinWZ.totEventWeight
+		ratio_WW_reg	= (WWinWW)/(WWinWW+WZinWW)
+		ratio_WZ_reg	= (WWinWZ)/(WWinWZ+WZinWZ)
+
+		WWWZ_r		= {'WW' : ratio_WW_reg, 'WZ' : ratio_WZ_reg}
+		print WWWZ_r
+
+
+		##workaround for WW el channel -> neglected anyway
+		fileInterWWel	= TFile.Open('Input/genlevel_WW_mu.root')
+		w2WW		= fileInterWWel.Get('w2')
+		fileInterWZ	= TFile.Open('Input/genlevel_WZ_%s.root'%ch)
+		w2WZ		= fileInterWZ.Get('w2')
+		a5WW		= w2WW.var('a5').getVal()
+		a5WZ		= w2WZ.var('a5').getVal()
+		a5val		= a5WZ
+		a5_tmp		= RooRealVar('a_cwww_ccw_%s'%channel,'a_cwww_ccw_%s'%channel,w2WW.var('a5').getVal())
+		##
 		#read results of generator level study
 		fileInterWW	= TFile.Open('Input/genlevel_WW_%s.root'%ch)
 		w2WW		= fileInterWW.Get('w2')
 		fileInterWZ	= TFile.Open('Input/genlevel_WZ_%s.root'%ch)
 		w2WZ		= fileInterWZ.Get('w2')
-
-		#get ratio WW/WZ in WW- and WZ-category
-		fileInWWinWW	= TFile.Open('Output/ATGC-Tree_WW_lo_%s.root'%ch)
-		treeInWWinWW	= fileInWWinWW.Get('BasicTree')
-		WWinWW		= treeInWWinWW.GetEntries()
-		fileInWWinWZ	= TFile.Open('Output/ATGC-Tree_WW_hi_%s.root'%ch)
-		treeInWWinWZ	= fileInWWinWZ.Get('BasicTree')
-		WWinWZ		= treeInWWinWZ.GetEntries()
-		fileInWZinWW	= TFile.Open('Output/ATGC-Tree_WZ_lo_%s.root'%ch)
-		treeInWZinWW	= fileInWZinWW.Get('BasicTree')
-		WZinWW		= treeInWZinWW.GetEntries()
-		fileInWZinWZ	= TFile.Open('Output/ATGC-Tree_WZ_hi_%s.root'%ch)
-		treeInWZinWZ	= fileInWZinWZ.Get('BasicTree')
-		WZinWZ		= treeInWZinWZ.GetEntries()
-		ratio_WW_reg	= float(WWinWW)/float((WWinWW+WZinWW))
-		ratio_WZ_reg	= float(WWinWZ)/float((WWinWZ+WZinWZ))
-		WWWZ_r		= {'WW' : ratio_WW_reg, 'WZ' : ratio_WZ_reg}
 		
+
 		#define slopes and coefficients
-		a5WW		= w2WW.var('a5')
-		a5WZ		= w2WZ.var('a5')
-		a5val		= WWWZ_r[cat]*a5WW.getVal() + (1-WWWZ_r[cat])*a5WZ.getVal()
-		a5_tmp		= RooRealVar('a_cwww_ccw_%s'%channel,'a_cwww_ccw_%s'%channel,a5val)
+		#a5WW		= w2WW.var('a5').getVal()
+		#a5WZ		= w2WZ.var('a5').getVal()
+		#a5val		= WWWZ_r[cat]*a5WW + (1-WWWZ_r[cat])*a5WZ
+		#a5_tmp		= RooRealVar('a_cwww_ccw_%s'%channel,'a_cwww_ccw_%s'%channel,a5val)
+		a6WW		= w2WW.var('a6').getVal()
+		a6WZ		= w2WZ.var('a6').getVal()
+		a6val		= WWWZ_r[cat]*a6WW + (1-WWWZ_r[cat])*a6WZ
+		a6_tmp		= RooRealVar('a_cwww_cb_%s'%channel,'a_cwww_cb_%s'%channel,a6val)
+		a7WW		= w2WW.var('a7').getVal()
+		a7WZ		= w2WZ.var('a7').getVal()
+		a7val		= WWWZ_r[cat]*a7WW + (1-WWWZ_r[cat])*a7WZ
+		a7_tmp		= RooRealVar('a_ccw_cb_%s'%channel,'a_ccw_cb_%s'%channel,a7val)
 		a5		= RooFormulaVar('a_cwww_ccw_nuis_%s'%channel,'a_cwww_ccw_nuis_%s'%channel,'@0*@1',RooArgList(a5_tmp,eps))
 		a5_tmp.setConstant(kTRUE)
-		a6WW		= w2WW.var('a6')
-		a6WZ		= w2WZ.var('a6')
-		a6val		= WWWZ_r[cat]*a6WW.getVal() + (1-WWWZ_r[cat])*a6WZ.getVal()
-		a6_tmp		= RooRealVar('a_cwww_cb_%s'%channel,'a_cwww_cb_%s'%channel,a6val)
-		a6		= RooFormulaVar('a_cwww_cb_nuis_%s'%channel,'a_cwww_cb_nuis_%s'%channel,'@0*@1',RooArgList(a6_tmp,eps))
 		a6_tmp.setConstant(kTRUE)
-		a7WW		= w2WW.var('a7')
-		a7WZ		= w2WZ.var('a7')
-		a7val		= WWWZ_r[cat]*a5WW.getVal() + (1-WWWZ_r[cat])*a7WZ.getVal()
-		a7_tmp		= RooRealVar('a_ccw_cb_%s'%channel,'a_ccw_cb_%s'%channel,a7val)
-		a7		= RooFormulaVar('a_ccw_cb_nuis_%s'%channel,'a_ccw_cb_nuis_%s'%channel,'@0*@1',RooArgList(a7_tmp,eps))
 		a7_tmp.setConstant(kTRUE)
+		if cat=='WZ':
+			a6		= RooFormulaVar('a_cwww_cb_nuis_%s'%channel,'a_cwww_cb_nuis_%s'%channel,'@0*@1',RooArgList(a6_tmp,eps4cbWZ))
+			a7		= RooFormulaVar('a_ccw_cb_nuis_%s'%channel,'a_ccw_cb_nuis_%s'%channel,'@0*@1',RooArgList(a7_tmp,eps4cbWZ))
+		else:
+			a6		= RooFormulaVar('a_cwww_cb_nuis_%s'%channel,'a_cwww_cb_nuis_%s'%channel,'@0*@1',RooArgList(a6_tmp,eps))
+			a7		= RooFormulaVar('a_ccw_cb_nuis_%s'%channel,'a_ccw_cb_nuis_%s'%channel,'@0*@1',RooArgList(a7_tmp,eps))
+
 		NSMWW		= w2WW.var('N_SM').getVal()
 		NSMWZ		= w2WZ.var('N_SM').getVal()
 		NSM		= WWWZ_r[cat]*NSMWW + (1-WWWZ_r[cat])*NSMWZ
@@ -605,45 +649,93 @@ def make_input(ch = 'el',binlo=900,binhi=3500):
 		datahist_all3	= RooDataHist('datahist_all3','datahist_all3',RooArgList(rrv_mass_lvj),hist_all3)
 		N_4norm		= WWWZ_r[cat]*w2WW.var('N_4norm').getVal() + (1-WWWZ_r[cat])*w2WZ.var('N_4norm').getVal()
 		corr_factor	= datahist_all3.sumEntries() / N_4norm
+
 		
 		#define more coefficients
-		N1220WW		= w2WW.var('N_cwww_ccw__12_20').getVal()
-		N1260WW		= w2WW.var('N_cwww_cb__12_60').getVal()
-		N2060WW		= w2WW.var('N_ccw_cb__20_60').getVal()
-		N1220WZ		= w2WZ.var('N_cwww_ccw__12_20').getVal()
-		N1260WZ		= w2WZ.var('N_cwww_cb__12_60').getVal()
-		N2060WZ		= w2WZ.var('N_ccw_cb__20_60').getVal()
-		#scale coefficients
+		N1220WW		= w2WW.var('N_cwww_ccw__12__20').getVal()
+		N1260WW		= w2WW.var('N_cwww_cb__12__60').getVal()
+		N2060WW		= w2WW.var('N_ccw_cb__20__60').getVal()
+		N1220WZ		= w2WZ.var('N_cwww_ccw__12__20').getVal()
+		N1260WZ		= w2WZ.var('N_cwww_cb__12__60').getVal()
+		N2060WZ		= w2WZ.var('N_ccw_cb__20__60').getVal()
+		#scale coefficients, take into account that there are no WZ events for cb
 		N1220		= WWWZ_r[cat]*N1220WW + (1-WWWZ_r[cat])*N1220WZ
 		N1260		= WWWZ_r[cat]*N1260WW + (1-WWWZ_r[cat])*N1260WZ
 		N2060		= WWWZ_r[cat]*N2060WW + (1-WWWZ_r[cat])*N2060WZ
 	
-		N_SM_val= wtmp.data('SMdatahist').sumEntries()
-		N12_ 	= wtmp.data('neg_datahist_cwww').sumEntries()
-		N20_	= wtmp.data('neg_datahist_ccw').sumEntries()
-		N60_	= wtmp.data('neg_datahist_cb').sumEntries()
-		N1220 	= N1220*corr_factor
-		N1260 	= N1260*corr_factor
-		N2060 	= N2060*corr_factor
-		N_cwww_ccw	= RooRealVar('N_cwww_ccw_%s'%channel,'N_cwww_ccw_%s'%channel,\
-						-((N1220+N_SM_val)-(N12_+N20_)))
-		N_cwww_cb	= RooRealVar('N_cwww_cb_%s'%channel,'N_cwww_cb_%s'%channel,\
-						-((N1260+N_SM_val)-(N12_+N60_)))
-		N_ccw_cb	= RooRealVar('N_ccw_cb_%s'%channel,'N_ccw_cb_%s'%channel,\
-						-((N2060+N_SM_val)-(N20_+N60_)))
+		NSMval= wtmp.data('SMdatahist').sumEntries()
+		N12val 	= wtmp.data('pos_datahist_cwww').sumEntries()
+		N12_val	= wtmp.data('neg_datahist_cwww').sumEntries()
+		N20val	= wtmp.data('pos_datahist_ccw').sumEntries()
+		N20_val	= wtmp.data('neg_datahist_ccw').sumEntries()
+		N60val	= wtmp.data('pos_datahist_cb').sumEntries()
+		N60_val	= wtmp.data('neg_datahist_cb').sumEntries()
 
+		N12	= WWWZ_r[cat]*w2WW.var('N_cwww_12').getVal() + (1-WWWZ_r[cat])*w2WZ.var('N_cwww_12').getVal()
+		N12_	= WWWZ_r[cat]*w2WW.var('N_cwww__12').getVal() + (1-WWWZ_r[cat])*w2WZ.var('N_cwww__12').getVal()
+		N20	= WWWZ_r[cat]*w2WW.var('N_ccw_20').getVal() + (1-WWWZ_r[cat])*w2WZ.var('N_ccw_20').getVal()
+		N20_	= WWWZ_r[cat]*w2WW.var('N_ccw__20').getVal() + (1-WWWZ_r[cat])*w2WZ.var('N_ccw__20').getVal()
+		N60	= WWWZ_r[cat]*w2WW.var('N_cb_60').getVal() + (1-WWWZ_r[cat])*w2WZ.var('N_cb_60').getVal()
+		N60_	= WWWZ_r[cat]*w2WW.var('N_cb__60').getVal() + (1-WWWZ_r[cat])*w2WZ.var('N_cb__60').getVal()
+
+		print WWWZ_r
+
+		corr_factor_SM 		= NSMval/NSM
+		corr_factor_cwww	= N12val/N12
+		corr_factor_ccw		= N20val/N20
+		corr_factor_cb		= N60val/N60
+
+		#N1220 	= N1220*corr_factor
+		#N1260 	= N1260*corr_factor
+		#N2060 	= N2060*corr_factor
+		print str(N1220) + ',' + str(NSM) + ',' + str(N12_) + ',' + str(N20)
+		print str(N12val/N12) + ' , ' + str(N12_val/N12_)
+		print str(N20val/N20) + ' , ' + str(N20_val/N20_)
+		print str(N60val/N60) + ' , ' + str(N60_val/N60_)
+
+	
+		cf_cwww_cb	= (corr_factor_cwww+corr_factor_cb)/2
+		cf_cwww_ccw	= (corr_factor_cwww+corr_factor_ccw)/2
+		cf_ccw_cb	= (corr_factor_ccw+corr_factor_cb)/2
+		#cf		= (corr_factor_cwww+corr_factor_ccw+corr_factor_cb)/3
+		cf 		= corr_factor
+		#N_cwww_ccw	= RooRealVar('N_cwww_ccw_%s'%channel,'N_cwww_ccw_%s'%channel,\
+		#				((N1220*cf+NSMval)-(N12_val+N20val)))
+		#N_cwww_cb	= RooRealVar('N_cwww_cb_%s'%channel,'N_cwww_cb_%s'%channel,\
+		#				((N1260*cf+NSMval)-(N12_val+N60val)))
+		#N_ccw_cb	= RooRealVar('N_ccw_cb_%s'%channel,'N_ccw_cb_%s'%channel,\
+		#				((N2060*cf+NSMval)-(N20_val+N60val)))
+
+		##no cwww-ccw interference
+		#N_cwww_ccw	= RooRealVar('N_cwww_ccw_%s'%channel,'N_cwww_ccw_%s'%channel,\
+		#				(1-WWWZ_r[cat])*cf*((N1220+NSM)-(N12+N20_)))
+		N_cwww_ccw	= RooRealVar('N_cwww_ccw_%s'%channel,'N_cwww_ccw_%s'%channel,0)
+		N_cwww_cb	= RooRealVar('N_cwww_cb_%s'%channel,'N_cwww_cb_%s'%channel,\
+						cf*((N1260+NSM)-(N12+N60_)))
+		N_ccw_cb	= RooRealVar('N_ccw_cb_%s'%channel,'N_ccw_cb_%s'%channel,\
+						cf*((N2060+NSM)-(N20+N60_)))
+
+		#print str((N1220+NSM)-(N12_+N20))+'/'+str(N_cwww_ccw.getVal())+' : '+str(((N1220+NSM)-(N12_+N20))/(N_cwww_ccw.getVal()))
+		print str((N1260+NSM)-(N12_+N60))+'/'+str(N_cwww_cb.getVal())+' : '+str(((N1260+NSM)-(N12_+N60))/(N_cwww_cb.getVal()))
+		print str((N2060+NSM)-(N20_+N60))+'/'+str(N_ccw_cb.getVal())+' : '+str(((N2060+NSM)-(N20_+N60))/(N_ccw_cb.getVal()))
+		print str(N_4norm)+'/'+str(N_4norm*cf)+'/'+str(datahist_all3.sumEntries())
+		print str(N1220)+'/'+str(N1220*cf)
+		print str(N1260)+'/'+str(N1260*cf)
+		print str(N2060)+'/'+str(N2060*cf)
 
 
 		paralist.add(RooArgList(wtmp.function('N_quad_%s_%s'%(POI[0],channel)),wtmp.function('N_lin_%s_%s'%(POI[0],channel)),wtmp.var('cwww'),\
 					wtmp.function('N_quad_%s_%s'%(POI[1],channel)),wtmp.function('N_lin_%s_%s'%(POI[1],channel)),wtmp.var('ccw'),\
 					wtmp.function('N_quad_%s_%s'%(POI[2],channel)),wtmp.function('N_lin_%s_%s'%(POI[2],channel)),wtmp.var('cb')))
 		paralist.add(RooArgList(N_cwww_ccw,N_cwww_cb,N_ccw_cb))
-		cwww_s		= '+@1*(@3/12)**2+@2*(@3/12)'
+		#neglect SM interference for cwww
+		#cwww_s		= '+@1*(@3/12)**2+@2*(@3/12)'
+		cwww_s		= '+@1*(@3/12)**2'
 		ccw_s		= '+@4*(@6/20)**2+@5*(@6/20)'
 		cb_s		= '+@7*(@9/60)**2+@8*(@9/60)'
-		cwww_ccw_s	= '+@10*(@3/12)*(@6/20)'
-		cwww_cb_s	= '+@11*(@3/12)*(@9/60)'
-		ccw_cb_s	= '+@12*(@6/20)*(@9/60)'
+		cwww_ccw_s	= ''#'+@10*(@3/12)*(@6/-20)'
+		cwww_cb_s	= '+@11*(@3/12)*(@9/-60)'
+		ccw_cb_s	= '+@12*(@6/20)*(@9/-60)'
 		Pdf_norm	= RooFormulaVar( 'Pdf_norm_%s'%channel,'Pdf_norm_%s'%channel,\
 							'@0'+cwww_s+ccw_s+cb_s+cwww_ccw_s+cwww_cb_s+ccw_cb_s,paralist)
 		paralistN	= RooArgList()
@@ -653,14 +745,18 @@ def make_input(ch = 'el',binlo=900,binhi=3500):
 
 		N1		= RooFormulaVar( 'N1_%s'%channel,'N1_%s'%channel,'@0/@13',paralistN )
 		N2		= RooFormulaVar( 'N2_%s'%channel,'N2_%s'%channel,'(@1*(@3/12)**2)/@13',paralistN )
-		N3		= RooFormulaVar( 'N3_%s'%channel,'N3_%s'%channel,'(@2*(@3/12))/@13',paralistN )
+		#no SM-interference for c_WWW
+		#N3		= RooFormulaVar( 'N3_%s'%channel,'N3_%s'%channel,'(@2*(@3/12))/@13',paralistN )
+		N3		= RooRealVar( 'N3_%s'%channel,'N3_%s'%channel,0 )
 		N4		= RooFormulaVar( 'N4_%s'%channel,'N4_%s'%channel,'(@4*(@6/20)**2)/@13',paralistN )
 		N5		= RooFormulaVar( 'N5_%s'%channel,'N5_%s'%channel,'(@5*(@6/20))/@13',paralistN )
 		N6		= RooFormulaVar( 'N6_%s'%channel,'N6_%s'%channel,'(@7*(@9/60)**2)/@13',paralistN )
 		N7		= RooFormulaVar( 'N7_%s'%channel,'N7_%s'%channel,'(@8*(@9/60))/@13',paralistN )
-		N8		= RooFormulaVar( 'N8_%s'%channel,'N8_%s'%channel,'(@10*(@3/12)*(@6/20))/@13',paralistN )
-		N9		= RooFormulaVar( 'N9_%s'%channel,'N9_%s'%channel,'(@11*(@3/12)*(@9/60))/@13',paralistN )
-		N10		= RooFormulaVar( 'N10_%s'%channel,'N10_%s'%channel,'(@12*(@6/20)*(@9/60))/@13',paralistN )
+		#no aTGC-interference for c_WWW/c_W
+		#N8		= RooFormulaVar( 'N8_%s'%channel,'N8_%s'%channel,'(@10*(@3/12)*(@6/-20))/@13',paralistN )
+		N8		= RooRealVar('N8_%s'%channel,'N8_%s'%channel,0)
+		N9		= RooFormulaVar( 'N9_%s'%channel,'N9_%s'%channel,'(@11*(@3/12)*(@9/-60))/@13',paralistN )
+		N10		= RooFormulaVar( 'N10_%s'%channel,'N10_%s'%channel,'(@12*(@6/20)*(@9/-60))/@13',paralistN )
 
 		N_list		= RooArgList(N1,N2,N3,N4,N5,N6,N7)
 		N_list.add(RooArgList(N8,N9,N10))
@@ -669,6 +765,8 @@ def make_input(ch = 'el',binlo=900,binhi=3500):
 					wtmp.pdf('Pdf_quad_%s_%s'%(POI[1],channel)),wtmp.pdf('Pdf_lin_%s_%s'%(POI[1],channel)),\
 					wtmp.pdf('Pdf_quad_%s_%s'%(POI[2],channel)),wtmp.pdf('Pdf_lin_%s_%s'%(POI[2],channel))))
 		Pdf_list.add(RooArgList(Pdf_cwww_ccw,Pdf_cwww_cb,Pdf_ccw_cb))
+		N_list.Print()
+		Pdf_list.Print()
 		model		= RooAddPdf('aTGC_model_%s'%channel,'aTGC_model_%s'%channel, Pdf_list, N_list)
 		model.Print()
 
@@ -676,8 +774,6 @@ def make_input(ch = 'el',binlo=900,binhi=3500):
 						wtmp.function('scaleshape_%s_%s'%(POI[1],channel)),\
 						wtmp.function('scaleshape_%s_%s'%(POI[2],channel)))
 		normfactor_3d	= RooFormulaVar('normfactor_3d_%s'%channel,'normfactor_3d_%s'%channel,'1+@0+@1+@2',scale_list)
-		getattr(WS,'import')(normfactor_3d)	
-		getattr(wtmp,'import')(normfactor_3d)	
 		wtmp.Print()
 
 		#fit 3 pdfs
@@ -695,21 +791,16 @@ def make_input(ch = 'el',binlo=900,binhi=3500):
 
 
 		model.Print()
+		getattr(WS,'import')(normfactor_3d)	
+		getattr(wtmp,'import')(normfactor_3d)
 		getattr(wtmp,'import')(model)
 		
 		#print coefficients to see contribution for all atgc-parameter positive
 		for i in range(3):
 			wtmp.var(POI[i]).setVal(par_max[POI[i]])
-		print paralist.at(0).getVal()
-		print paralist.at(1).getVal()
-		print paralist.at(2).getVal()
-		print paralist.at(4).getVal()
-		print paralist.at(5).getVal()
-		print paralist.at(7).getVal()
-		print paralist.at(8).getVal()
-		print paralist.at(10).getVal()
-		print paralist.at(11).getVal()
-		print paralist.at(12).getVal()
+		for i in range(13):
+			if i!=3 and i!=6 and i!=9:
+				print paralist.at(i).getVal()
 
 		#print fitresults
 		for i in range(10):
@@ -781,7 +872,7 @@ def make_input(ch = 'el',binlo=900,binhi=3500):
 	getattr(WS,'import')(model)
 
 	path	='/afs/cern.ch/work/c/crenner/CMSSW_7_1_5/src/CombinedEWKAnalysis/CommonTools/data/anomalousCoupling'
-	output 	= TFile('%s/%s_%s.root'%(path,cat,ch),'recreate')
+	output 	= TFile('%s/%s.root'%(path,channel),'recreate')
 
 	data_obs = TH1F('data_obs','data_obs',nbins4fit,binlo,binhi)
 	#data_obs	= TTree('data_obs','data_obs')
@@ -823,7 +914,7 @@ def make_input(ch = 'el',binlo=900,binhi=3500):
 		#		wtmp.var(POI[i]).setVal(0)
 		#model.plotOn(p4,RooFit.LineColor(kBlack),RooFit.Normalization(wtmp.function('normfactor_3d_%s_%s'%(cat,ch)).getVal()*wtmp.data('SMdatahist').sumEntries(),RooAbsReal.NumEvent))
 		for i in range(3):
-				wtmp.var(POI[i]).setVal(-par_max[POI[i]])
+				wtmp.var(POI[i]).setVal(par_max[POI[i]])
 		normval 	= RooRealVar('normval','normval',wtmp.function('normfactor_3d_%s_%s'%(cat,ch)).getVal()*wtmp.data('SMdatahist').sumEntries())
 		model.plotOn(p4,RooFit.LineColor(kBlue),RooFit.Normalization(normval.getVal(),RooAbsReal.NumEvent))
 		if options.eband:
@@ -842,6 +933,16 @@ def make_input(ch = 'el',binlo=900,binhi=3500):
 		print str(normval) + ' / ' + str(datahist_all3.sumEntries())
 		print str((normval/datahist_all3.sumEntries() -1)*100) + ' %'
 
+		for i in range(3):
+			wtmp.var(POI[i]).setVal(0)
+		for i in range(10):
+			for j in range(3):
+				wtmp.var(POI[j]).setVal((i+1)*par_max[POI[j]]/10)
+			model.plotOn(p4,RooFit.LineColor(kMagenta),RooFit.LineWidth(1),RooFit.LineStyle(kDashed),RooFit.Normalization(wtmp.function('normfactor_3d_%s_%s'%(cat,ch)).getVal()*wtmp.data('SMdatahist').sumEntries(),RooAbsReal.NumEvent))
+			for j in range(3):
+				wtmp.var(POI[j]).setVal((i+1)*(-par_max[POI[j]])/10)
+			model.plotOn(p4,RooFit.LineColor(kOrange),RooFit.LineWidth(1),RooFit.LineStyle(kDashed),RooFit.Normalization(wtmp.function('normfactor_3d_%s_%s'%(cat,ch)).getVal()*wtmp.data('SMdatahist').sumEntries(),RooAbsReal.NumEvent))
+	
 		#eps.setVal(1.1)
 		#model.plotOn(p4,RooFit.LineColor(kMagenta),RooFit.Normalization(normval,RooAbsReal.NumEvent))
 		#eps.setVal(0.9)
