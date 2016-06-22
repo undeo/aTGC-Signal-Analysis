@@ -21,6 +21,7 @@ cfgparse = SafeConfigParser()
 
 parser.add_option("--config",dest="config",help="The name of the input configuration file.")
 parser.add_option("-o","--outputcard",dest="ocard",help="Name of the generated combined datacard")
+parser.add_option("--binned",action='store_true',dest="binned",default=False,help="use RooDataHist for data -> binned fit for combine") 
 (options,args) = parser.parse_args()
 
 miss_options = False
@@ -107,16 +108,13 @@ print '\n\t\t=============================================> lnN: ',lnN_name
 print 'lnN value: ',lnN_value
 print 'lnN for: ',lnN_for
 
-if Ndim == 3:
-    par1low  = float(cfg.get('Global', 'par1Low'))
-    par1high = float(cfg.get('Global', 'par1High'))
-    par2low  = float(cfg.get('Global', 'par2Low'))
-    par2high = float(cfg.get('Global', 'par2High'))
-    par3low  = float(cfg.get('Global', 'par3Low'))
-    par3high = float(cfg.get('Global', 'par3High'))
+par1low  = float(cfg.get('Global', 'par1Low'))
+par1high = float(cfg.get('Global', 'par1High'))
+par2low  = float(cfg.get('Global', 'par2Low'))
+par2high = float(cfg.get('Global', 'par2High'))
+par3low  = float(cfg.get('Global', 'par3Low'))
+par3high = float(cfg.get('Global', 'par3High'))
 
-else:
-    print 'Only dimension 3 implemented... this thing will crash.'
 
 NSigBkg_corr_unc_int=0
 
@@ -159,13 +157,12 @@ for section in fit_sections:
         bkg_name.append(cfg.get(codename,'bkg%i_name'%i))
 
     background = []
-
     for i in range(0,Nbkg_int):
         background.append(oldWS.pdf(bkg_name[i]))
 
 
-    data_obs = f.Get('data_obs')
 
+    
     aTGCPdf = oldWS.pdf("aTGC_model_%s"%(codename))
     aTGCPdf.Print()
     aTGCPdf.SetName("ATGCPdf_%s"%codename)
@@ -189,23 +186,27 @@ for section in fit_sections:
 
     theWS = RooWorkspace('proc_%s'%codename, 'proc_%s'%codename)
     
-    wpt = theWS.factory('observable[%f,%f]' % (old_obs.getMin(), 
-                                         old_obs.getMax()))
-
-    if Ndim == 3:
-        par1 = theWS.factory('%s[0., %f, %f]' % (par1name, par1low, par1high))
-        par2 = theWS.factory('%s[0., %f, %f]' % (par2name, par2low, par2high))
-        par3 = theWS.factory('%s[0., %f, %f]' % (par3name, par3low, par2high))
-    else:
-        raise RuntimeError('Ndim = %s'%Ndim,
-                           'We can only use 3D (par1par2par3_TH3, par1par2par3_TF3) models right now!')
+    wpt = old_obs
+    getattr(theWS,'import')(wpt)
+    par1 = theWS.factory('%s[0., %f, %f]' % (par1name, par1low, par1high))
+    par2 = theWS.factory('%s[0., %f, %f]' % (par2name, par2low, par2high))
+    par3 = theWS.factory('%s[0., %f, %f]' % (par3name, par3low, par2high))
 
     vars = RooArgList(wpt)
     varSet = RooArgSet(wpt)
 
-    data 	= RooDataHist('data_obs', 'data_obs_proc_%s'%codename, vars, data_obs)
-    #data	= data_obs
- 
+    if options.binned:
+	data_obs	= f.Get('data_obs_hist')
+	if not isinstance(data_obs,TH1F):
+		raise RuntimeError("data_obs has to be TH1F!")
+	data		= RooDataHist('data_obs', 'data_obs_proc_%s'%codename, vars, data_obs)
+    else:
+	data_obs	= f.Get('data_obs_tree')
+	if not isinstance(data_obs,TTree):
+		raise RuntimeError("data_obs hat to be TTree!")
+    	data 		= RooDataSet('data_obs', 'data_obs_proc_%s'%codename, data_obs, varSet)
+	
+
     getattr(theWS, 'import')(data)
     for i in range(0,Nbkg_int):
         getattr(theWS, 'import')(bkgFits[i])
@@ -222,7 +223,7 @@ for section in fit_sections:
 imax 1  number of channels
 jmax {Nbkg_int}  number of backgrounds
 kmax *  number of nuisance parameters (sources of systematical uncertainties)
-------------""".format(codename=codename,norm_sig_sm=norm_sig_sm,norm_bkg=norm_bkg,norm_obs=norm_obs,Nbkg_int=Nbkg_int)
+------------""".format(codename=codename,norm_sig_sm=norm_sig_sm,norm_bkg=norm_bkg,Nbkg_int=Nbkg_int)
     for i in range(0,Nbkg_int):
         card += """
 shapes {bkg_name}\t {codename} {codename}_ws.root\t proc_{codename}:$PROCESS""".format(codename=codename,bkg_name=bkg_name[i])
@@ -237,28 +238,28 @@ shapes ATGCPdf_{codename}\t\t {codename} {codename}_ws.root\t proc_{codename}:$P
 bin {codename} 
 observation -1
 ------------
-bin                         {codename}\t\t""".format(codename=codename,norm_sig_sm=norm_sig_sm,norm_bkg=norm_bkg,norm_obs=norm_obs)
+bin                         {codename}\t\t""".format(codename=codename,norm_sig_sm=norm_sig_sm,norm_bkg=norm_bkg)
 
     for i in range(0,Nbkg_int):
-        card += """\t\t\t{codename}""".format(codename=codename,norm_sig_sm=norm_sig_sm,norm_bkg=norm_bkg[i],norm_obs=norm_obs)
+        card += """\t\t\t{codename}""".format(codename=codename,norm_sig_sm=norm_sig_sm,norm_bkg=norm_bkg[i])
 
     card += """       
-process\t\t\t    ATGCPdf_{codename}    """.format(codename=codename,norm_sig_sm=norm_sig_sm,norm_bkg=norm_bkg[i],norm_obs=norm_obs)
+process\t\t\t    ATGCPdf_{codename}    """.format(codename=codename,norm_sig_sm=norm_sig_sm,norm_bkg=norm_bkg[i])
 
     for i in range(0,Nbkg_int):
-        card += """\t\t{bkg_name}""".format(Nbkg_int=i+1,codename=codename,norm_sig_sm=norm_sig_sm,norm_bkg=norm_bkg[i],norm_obs=norm_obs,bkg_name=bkg_name[i])
+        card += """\t\t{bkg_name}""".format(Nbkg_int=i+1,codename=codename,norm_sig_sm=norm_sig_sm,norm_bkg=norm_bkg[i],bkg_name=bkg_name[i])
 
     card += """       
-process                     0	  	      """.format(codename=codename,norm_sig_sm=norm_sig_sm,norm_bkg=norm_bkg[i],norm_obs=norm_obs)
+process                     0	  	      """.format(codename=codename,norm_sig_sm=norm_sig_sm,norm_bkg=norm_bkg[i])
 
     for i in range(0,Nbkg_int):
-        card += """ \t\t\t\t{i}""".format(i=i+1,codename=codename,norm_sig_sm=norm_sig_sm,norm_bkg=norm_bkg[i],norm_obs=norm_obs)
+        card += """ \t\t\t\t{i}""".format(i=i+1,codename=codename,norm_sig_sm=norm_sig_sm,norm_bkg=norm_bkg[i])
         
     card += """       
-rate                        {norm_sig_sm}\t""".format(codename=codename,norm_sig_sm=norm_sig_sm,norm_bkg=norm_bkg[i],norm_obs=norm_obs)
+rate                        {norm_sig_sm}\t""".format(codename=codename,norm_sig_sm=norm_sig_sm,norm_bkg=norm_bkg[i])
 
     for i in range(0,Nbkg_int):
-        card += """ \t\t\t{norm_bkg}""".format(codename=codename,norm_sig_sm=norm_sig_sm,norm_bkg=norm_bkg[i],norm_obs=norm_obs)
+        card += """ \t\t\t{norm_bkg}""".format(codename=codename,norm_sig_sm=norm_sig_sm,norm_bkg=norm_bkg[i])
 
 	
     card += """           
@@ -305,6 +306,12 @@ slope_nuis param 1.0 0.05""".format(ch=ch[:2],cat=cat[1])
     cardfile.close()
     cardfilenames.append('aC_%s.txt'%(codename))
 
+print ''
+if options.binned:
+	print 'data_obs added as RooDataHist -> combine will do a binned fit!'
+else:
+	print 'data_obs added as RooDataSet -> combine will do an unbinned fit!'
+print ''
 
 #combine Cards
 print '### combining Cards ###'

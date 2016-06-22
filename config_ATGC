@@ -1,0 +1,100 @@
+[Global]
+NlnN=14
+lnN1_name	=lumi_13TeV
+lnN1_value	=1.027,1.027,1.027,1.027,1.027,1.027,1.027,1.027,1.027,1.027,1.027,1.027
+lnN1_for	=WW_el_TTbar,WW_el_STop,WW_el_signal,WW_mu_TTbar,WW_mu_STop,WW_mu_signal,WZ_el_TTbar,WZ_el_STop,WZ_el_signal,WZ_mu_TTbar,WZ_mu_STop,WZ_mu_signal
+#
+lnN2_name	=CMS_xww_WJ_norm_13TeV
+lnN2_value	=1.119,1.206,1.061,1.094
+lnN2_for	=WW_el_WJets,WZ_el_WJets,WW_mu_WJets,WZ_mu_WJets
+#
+lnN3_name	=CMS_eff_vtag_tau21_sf_13TeV
+lnN3_value	=1.120,1.120,1.120,1.120,1.120,1.120,1.120,1.120,1.120,1.120,1.120,1.120
+lnN3_for	=WW_el_signal,WZ_el_signal,WW_el_TTbar,WZ_el_TTbar,WW_el_STop,WZ_el_STop,WW_mu_signal,WZ_mu_signal,WW_mu_TTbar,WZ_mu_TTbar,WW_mu_STop,WZ_mu_STop
+#
+lnN4_name	=CMS_eff_b
+lnN4_value	=1.008,1.008,1.008,1.008
+lnN4_for	=WW_el_TTbar,WZ_el_TTbar,WW_mu_TTbar,WZ_mu_TTbar
+#
+lnN5_name	=CMS_scale_j
+lnN5_value	=0.980/1.020,1.020/0.980,0.977/1.023,1.023/0.977,0.979/1.021,1.021/0.979,0.984/1.016,1.016/0.984,0.973/1.027,1.027/0.973,0.998/1.002,1.002/0.998		
+lnN5_for	=WW_el_signal,WZ_el_signal,WW_el_TTbar,WZ_el_TTbar,WW_el_STop,WZ_el_STop,WW_mu_signal,WZ_mu_signal,WW_mu_TTbar,WZ_mu_TTbar,WW_mu_STop,WZ_mu_STop
+#
+lnN6_name	=CMS_res_j
+lnN6_value	=1.001,1.001
+lnN6_for	=WW_mu_STop,WZ_mu_STop
+#
+lnN7_name	=CMS_res_e
+lnN7_value	=1.001,1.001
+lnN7_for	=WW_el_TTbar,WZ_el_TTbar
+#
+lnN8_name	=CMS_res_m
+lnN8_value	=1.006,1.006,1.010,1.010,1.001,1.001
+lnN8_for	=WW_mu_signal,WZ_mu_signal,WW_mu_TTbar,WZ_mu_TTbar,WW_mu_STop,WZ_mu_STop
+#
+lnN9_name	=pdf_qqbar
+lnN9_value	=1.027,1.027,1.025,1.025,1.007,1.007,1.024,1.024,1.026,1.026,1.006,1.006
+lnN9_for	=WW_el_signal,WZ_el_signal,WW_el_TTbar,WZ_el_TTbar,WW_el_STop,WZ_el_STop,WW_mu_signal,WZ_mu_signal,WW_mu_TTbar,WZ_mu_TTbar,WW_mu_STop,WZ_mu_STop
+#
+lnN10_name	=QCDscale_VV
+lnN10_value	=1.058,1.058,1.060,1.060
+lnN10_for	=WW_el_signal,WZ_el_signal,WW_mu_signal,WZ_mu_signal
+#
+lnN11_name	=QCDscale_ttbar
+lnN11_value	=1.035,1.035,1.028,1.028,1.035,1.035,1.031,1.031
+lnN11_for	=WW_el_TTbar,WZ_el_TTbar,WW_el_STop,WZ_el_STop,WW_mu_TTbar,WZ_mu_TTbar,WW_mu_STop,WZ_mu_STop
+#
+lnN12_name	=CMS_scale_met
+lnN12_value	=1.005,1.005,1.001,1.001,0.992,0.992,0.992,0.992
+lnN12_for	=WW_el_signal,WZ_el_signal,WW_el_TTbar,WZ_el_TTbar,WW_mu_signal,WZ_mu_signal,WW_mu_STop,WZ_mu_STop
+#
+lnN13_name	=CMS_eff_e
+lnN13_value	=1.010,1.010,1.010,1.010,1.010,1.010
+lnN13_for	=WW_el_signal,WZ_el_signal,WW_el_TTbar,WZ_el_TTbar,WW_el_STop,WZ_el_STop
+#
+lnN14_name	=CMS_eff_m
+lnN14_value	=1.012,1.012,1.012,1.012,1.012,1.012
+lnN14_for	=WW_mu_signal,WZ_mu_signal,WW_mu_TTbar,WZ_mu_TTbar,WW_mu_STop,WZ_mu_STop
+
+model=par1par2par3_TF3
+par1Name = cwww
+par1Low = -24
+par1High = 24
+par2Name = ccw
+par2Low = -40
+par2High = 40
+par3Name = cb
+par3Low = -75
+par3High = 75
+
+[WW_el]
+Nbkg=3
+bkg1_name=TTbar
+bkg2_name=STop
+bkg3_name=WJets
+
+[WW_mu]
+Nbkg=3
+bkg1_name=TTbar
+bkg2_name=STop
+bkg3_name=WJets
+
+[WZ_el]
+Nbkg=3
+bkg1_name=TTbar
+bkg2_name=STop
+bkg3_name=WJets
+
+[WZ_mu]
+Nbkg=3
+bkg1_name=TTbar
+bkg2_name=STop
+bkg3_name=WJets
+
+
+
+
+
+
+
+

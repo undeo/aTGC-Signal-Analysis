@@ -13,15 +13,19 @@ gStyle.SetOptStat(0)
 gStyle.SetOptTitle(0)
 parser	= OptionParser()
 parser.add_option('--POI',dest='POI',help='parameter of interest')
-parser.add_option('--mode',dest='mode', default='linter', help='std, lin or linter')
+parser.add_option('-p', action='store_true', default=False, dest='pos')
 (options,args) = parser.parse_args()
 
 POI	= options.POI
 pval	= 0
 
+pos = options.pos
 
 def plots():
-	wsname		= 'higgsCombine1Par_%s_%s%s.MultiDimFit.mH120.root'%(options.mode,POI,pval)
+	if pos:
+		wsname		= 'higgsCombine1Par_sens%s_final_pos.MultiDimFit.mH120.root'%POI
+	else:
+		wsname		= 'higgsCombine1Par_sens%s_final_neg.MultiDimFit.mH120.root'%POI
 	print wsname
 	fileInATGC	= TFile.Open(wsname)
 	tree		= fileInATGC.Get('limit')
@@ -57,43 +61,22 @@ def plots():
 	if par == 'cb':
 		graph.GetXaxis().SetTitle('c_{B} / #Lambda^{2} (TeV^{-2})')
 
-	for i in range(NEntries/2):
-		j=i+1
-		tree.GetEntry(j)
-		if 2*tree.deltaNLL>3.84:
-			continue
-		else:
-			limlo = tree.GetLeaf(par).GetValue()
-			break
-	for i in range(NEntries/2):
-		j=i+ NEntries/2 +1
-		tree.GetEntry(j)
-		if 2*tree.deltaNLL<3.84:
-			continue
-		else:
-			limhi = tree.GetLeaf(par).GetValue()
-			break
-
-	linelo = TLine(limlo,graph.GetYaxis().GetXmin(),limlo,graph.GetYaxis().GetXmax())
-	linehi = TLine(limhi,graph.GetYaxis().GetXmin(),limhi,graph.GetYaxis().GetXmax())
-	linelo.SetLineStyle(7)
-	linehi.SetLineStyle(7)
 	graph.GetYaxis().SetTitle('2#DeltaNLL')
 	graph.GetYaxis().SetTitleSize(0.05)
 	graph.GetYaxis().SetTitleOffset(0.75)
-	#hist.GetYaxis().SetRangeUser(0,4.2)
-	#hist.GetXaxis().SetRangeUser(10,14.5)
 	graph.SetLineWidth(2)
 	graph.Draw()
 	line4.Draw('SAME')
-	linelo.Draw('SAME')
-	linehi.Draw('SAME')
 	c1.Update()
-	c1.SaveAs("ATGCRooStatsTMP/docuplots/1dlimit_%s.pdf"%POI)
-	c1.SaveAs("ATGCRooStatsTMP/docuplots/1dlimit_%s.png"%POI)
+	if pos:
+		c1.SaveAs("ATGCRooStatsTMP/docuplots/1dsens_%s_pos.pdf"%POI)
+		c1.SaveAs("ATGCRooStatsTMP/docuplots/1dsens_%s_pos.png"%POI)
+	else:
+		c1.SaveAs("ATGCRooStatsTMP/docuplots/1dsens_%s_neg.pdf"%POI)
+		c1.SaveAs("ATGCRooStatsTMP/docuplots/1dsens_%s_neg.png"%POI)
+
 	error = (float(x[1]) - float(x[0]))
 
-	print '95%% C.L. limit on %s: [%s,%s] +- %s'%(par,round(limlo,2),round(limhi,2),round(error,2))
 
 	raw_input('<>')
 
