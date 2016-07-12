@@ -361,7 +361,7 @@ def make_input(ch = 'el',binlo=900,binhi=3500):
 	fitresSM	= SMPdf.fitTo(SMdatahist, RooFit.SumW2Error(kTRUE), RooFit.Save(kTRUE))
 	fitresults.append(fitresSM)
 	a1_4fit.setConstant(kTRUE)
-	N_SM		= RooRealVar('N_SM_%s'%channel,'N_SM_%s'%channel,SMdatahist.sumEntries('rrv_mass_lvj>%s'%binlo))
+	N_SM		= RooRealVar('N_SM_%s'%channel,'N_SM_%s'%channel,SMdatahist.sumEntries()
 	N_SM.setConstant(kTRUE)
 
 	getattr(wtmp,'import')(cwww);
