@@ -348,7 +348,7 @@ def make_input(ch = 'el',binlo=900,binhi=3500):
 	for i in range(treeATGC.GetEntries()):
 		treeATGC.GetEntry(i)
 		if treeATGC.c_wwwl == 0 and treeATGC.c_wl == 0 and treeATGC.c_bl == 0:
-			if treeATGC.MWW > binlo and treeATGC.MWW < binhi:
+			if treeATGC.MWW > 600 and treeATGC.MWW < binhi:
 	    			SMhist.Fill(treeATGC.MWW,treeATGC.totEventWeight)
 			if treeATGC.MWW > binlo and treeATGC.MWW < binhi:
 	    			SMhisthi.Fill(treeATGC.MWW,treeATGC.totEventWeight)
@@ -361,7 +361,7 @@ def make_input(ch = 'el',binlo=900,binhi=3500):
 	fitresSM	= SMPdf.fitTo(SMdatahist, RooFit.SumW2Error(kTRUE), RooFit.Save(kTRUE))
 	fitresults.append(fitresSM)
 	a1_4fit.setConstant(kTRUE)
-	N_SM		= RooRealVar('N_SM_%s'%channel,'N_SM_%s'%channel,SMdatahist.sumEntries()
+	N_SM		= RooRealVar('N_SM_%s'%channel,'N_SM_%s'%channel,SMdatahist.sumEntries())
 	N_SM.setConstant(kTRUE)
 
 	getattr(wtmp,'import')(cwww);
