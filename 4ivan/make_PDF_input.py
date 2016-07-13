@@ -751,7 +751,7 @@ def make_input(ch = 'el',binlo=900,binhi=3500):
 		wtmp.Print()
 
 		#fit 3 pdfs
-
+		rrv_mass_lvj.setRange(600,binhi)
 		for i in range(3):
 			for j in range(3):
 				wtmp.var(POI[j]).setVal(0)
