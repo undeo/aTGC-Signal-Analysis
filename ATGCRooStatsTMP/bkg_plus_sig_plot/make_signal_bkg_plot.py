@@ -33,7 +33,7 @@ w_SM		= fileInSM.Get('wtmp')
 fileInSM.Close()
 w_err		= RooWorkspace('w_err')
 
-w.var('rrv_mass_lvj').setRange(900,3500)
+#w.var('rrv_mass_lvj').setRange(900,3500)
 
 getattr(w_err,'import')(w.pdf('VV_xww_%s_HP%s'%(ch,cat[1])))
 #getattr(w_err,'import')(w.pdf('STop_xww_%s_HP%s'%(ch,cat[1])))
@@ -53,7 +53,7 @@ getattr(w_err,'import')(w_sig.pdf('aTGC_model_%s_%s'%(cat,ch)))
 
 
 rrv_x		= w_err.var('rrv_mass_lvj')
-rrv_x.setRange(900,3500)
+#rrv_x.setRange(900,3500)
 
 VV_pdf		= w_err.pdf('VV_xww_%s_HP%s'%(ch,cat[1]))
 #STop_pdf	= w_err.pdf('STop_xww_%s_HP%s'%(ch,cat[1]))
@@ -71,15 +71,13 @@ WJets_norm	= w_err.var('rate_WJets_xww_for_unbin')
 #allbkg_pdf	= RooAddPdf('allbkg','allbkg',RooArgList(VV_pdf,STop_pdf,TTbar_pdf,WJets_pdf),RooArgList(VV_norm,STop_norm,TTbar_norm,WJets_norm))
 allbkg_pdf	= RooAddPdf('allbkg','allbkg',RooArgList(Sig_pdf,STop_pdf,TTbar_pdf,WJets_pdf),RooArgList(VV_norm,STop_norm,TTbar_norm,WJets_norm))
 
-
-
 VV_norm_val	= VV_norm.getVal()
 STop_norm_val	= STop_norm.getVal()
 TTbar_norm_val	= TTbar_norm.getVal()
 WJets_norm_val	= WJets_norm.getVal()
 #allbkg_norm	= RooRealVar('allbkg_norm','allbkg_norm',VV_norm_val+STop_norm_val+TTbar_norm_val+WJets_norm_val)
 #allbkg_norm.setError(TMath.Sqrt(VV_norm.getError()*VV_norm.getError()+STop_norm.getError()*STop_norm.getError()+TTbar_norm.getError()*TTbar_norm.getError()+WJets_norm.getError()*WJets_norm.getError()))
-allbkg_norm	= RooRealVar('allbkg_norm','allbkg_norm',STop_norm_val+TTbar_norm_val+WJets_norm_val)
+allbkg_norm	= RooRealVar('allbkg_norm','allbkg_norm',VV_norm_val+STop_norm_val+TTbar_norm_val+WJets_norm_val)
 allbkg_norm.setError(TMath.Sqrt(VV_norm.getError()*VV_norm.getError()+STop_norm.getError()*STop_norm.getError()+TTbar_norm.getError()*TTbar_norm.getError()+WJets_norm.getError()*WJets_norm.getError()))
 allbkg_norm_val	= allbkg_norm.getVal()
 allbkg_norm_err_val = allbkg_norm.getError()
@@ -96,8 +94,6 @@ Sig_norm	= RooRealVar('Sig_norm','Sig_norm',w_err.function('normfactor_3d_%s_%s'
 #Sig_norm	= RooRealVar('Sig_norm','Sig_norm',w_SM.function('normfactor_3d_4fit_%s'%channel).getVal()*w_SM.data('SMdatahist').sumEntries())
 
 
-
-
 allbkgsig_pdf	= RooAddPdf('allbkgsig','allbkgsig',RooArgList(allbkg_pdf,Sig_pdf),RooArgList(allbkg_norm,Sig_norm))
 
 
@@ -106,40 +102,24 @@ floatparams	= RooArgList(w_err.var('Deco_WJets0_xww_sim_%s_HP%s_mlvj_13TeV_eig0'
 
 c		= TCanvas('c','c',1)
 c.cd()
-p		= rrv_x.frame(900,3500)
-
-
+p		= rrv_x.frame(900,5000)
 c.SetLogy()
-#allbkgsig_pdf.plotOn(p, RooFit.Normalization(norm4error.getVal()), RooFit.DrawOption('F'), RooFit.FillColor(kCyan+1))
-#allbkg_pdf.plotOn(p, RooFit.Normalization(allbkg_norm_val), RooFit.Components('STop_xww_%s_HP%s,TTbar_xww_%s_HP%s,WJets_xww_%s_HP%s'%(ch,cat[1],ch,cat[1],ch,cat[1])), RooFit.DrawOption('F'), RooFit.FillColor(kGreen+1), RooFit.LineColor(kBlack), RooFit.LineWidth(1))
-#allbkg_pdf.plotOn(p, RooFit.Normalization(allbkg_norm_val), RooFit.Components('STop_xww_%s_HP%s,TTbar_xww_%s_HP%s'%(ch,cat[1],ch,cat[1])), RooFit.DrawOption('F'), RooFit.FillColor(kOrange), RooFit.LineColor(kBlack), RooFit.LineWidth(1))
-#allbkg_pdf.plotOn(p, RooFit.Normalization(allbkg_norm_val), RooFit.Components('STop_xww_%s_HP%s'%(ch,cat[1])), RooFit.DrawOption('F'), RooFit.FillColor(kRed), RooFit.LineColor(kBlack), RooFit.LineWidth(1))
-#allbkg_pdf.plotOn(p, RooFit.Normalization(allbkg_norm_val), RooFit.Components('STop_xww_%s_HP%s'%(ch,cat[1])), RooFit.DrawOption('F'), RooFit.FillColor(kBlue), RooFit.LineColor(kBlack), RooFit.LineWidth(1))
-allbkg_pdf.plotOn(p, RooFit.Normalization(allbkg_norm_val), RooFit.Components('Sig,STop,TTbar,WJets'), RooFit.DrawOption('F'), RooFit.FillColor(kGreen+1), RooFit.LineColor(kBlack), RooFit.LineWidth(1))
-allbkg_pdf.plotOn(p, RooFit.Normalization(allbkg_norm_val), RooFit.Components('Sig,STop,TTbar'), RooFit.DrawOption('F'), RooFit.FillColor(kOrange), RooFit.LineColor(kBlack), RooFit.LineWidth(1))
-allbkg_pdf.plotOn(p, RooFit.Normalization(allbkg_norm_val), RooFit.Components('Sig,STop'), RooFit.DrawOption('F'), RooFit.FillColor(kRed), RooFit.LineColor(kBlack), RooFit.LineWidth(1))
-allbkg_pdf.plotOn(p, RooFit.Normalization(allbkg_norm_val), RooFit.Components('STop'), RooFit.DrawOption('F'), RooFit.FillColor(kBlue), RooFit.LineColor(kBlack), RooFit.LineWidth(1))
 
+allbkg_pdf.plotOn(p, RooFit.Normalization(allbkg_norm_val,RooAbsReal.NumEvent), RooFit.Components('Sig,STop,TTbar,WJets'), RooFit.DrawOption('F'), RooFit.FillColor(kGreen+1), RooFit.LineColor(kBlack), RooFit.LineWidth(1))
+allbkg_pdf.plotOn(p, RooFit.Normalization(allbkg_norm_val,RooAbsReal.NumEvent), RooFit.Components('Sig,STop,TTbar'), RooFit.DrawOption('F'), RooFit.FillColor(kOrange), RooFit.LineColor(kBlack), RooFit.LineWidth(1))
+allbkg_pdf.plotOn(p, RooFit.Normalization(allbkg_norm_val,RooAbsReal.NumEvent), RooFit.Components('Sig,STop'), RooFit.DrawOption('F'), RooFit.FillColor(kRed), RooFit.LineColor(kBlack), RooFit.LineWidth(1))
+allbkg_pdf.plotOn(p, RooFit.Normalization(allbkg_norm_val,RooAbsReal.NumEvent), RooFit.Components('STop'), RooFit.DrawOption('F'), RooFit.FillColor(kBlue), RooFit.LineColor(kBlack), RooFit.LineWidth(1))
 
-#allbkg_pdf.plotOn(p, RooFit.Normalization(allbkg_norm_val), RooFit.Components('STop_xww_%s_HP%s,TTbar_xww_%s_HP%s,WJets_xww_%s_HP%s'%(ch,cat[1],ch,cat[1],ch,cat[1])), RooFit.LineColor(kBlack), RooFit.LineWidth(1))
-#allbkg_pdf.plotOn(p, RooFit.Normalization(allbkg_norm_val), RooFit.Components('STop_xww_%s_HP%s,TTbar_xww_%s_HP%s'%(ch,cat[1],ch,cat[1])), RooFit.LineColor(kBlack), RooFit.LineWidth(1))
-#allbkg_pdf.plotOn(p, RooFit.Normalization(allbkg_norm_val), RooFit.Components('STop_xww_%s_HP%s'%(ch,cat[1])), RooFit.LineColor(kBlack), RooFit.LineWidth(1))
-#allbkg_pdf.plotOn(p, RooFit.Normalization(allbkg_norm_val), RooFit.Components('STop_xww_%s_HP%s'%(ch,cat[1])), RooFit.LineColor(kBlack), RooFit.LineWidth(1), RooFit.LineStyle(1))
 allbkg_pdf.plotOn(p, RooFit.Normalization(allbkg_norm_val), RooFit.Components('Sig,STop,TTbar,WJets'), RooFit.LineColor(kBlack), RooFit.LineWidth(1))
 allbkg_pdf.plotOn(p, RooFit.Normalization(allbkg_norm_val), RooFit.Components('Sig,STop,TTbar'), RooFit.LineColor(kBlack), RooFit.LineWidth(1))
 allbkg_pdf.plotOn(p, RooFit.Normalization(allbkg_norm_val), RooFit.Components('Sig,STop'), RooFit.LineColor(kBlack), RooFit.LineWidth(1))
 allbkg_pdf.plotOn(p, RooFit.Normalization(allbkg_norm_val), RooFit.Components('STop'), RooFit.LineColor(kBlack), RooFit.LineWidth(1))
 
+
 draw_error_band(allbkg_pdf, rrv_x.GetName(), allbkg_norm, floatparams , w_err, p, kBlack, "F", 3013)
-#allbkg_norm.setError(0)
-#draw_error_band(allbkg_pdf, rrv_x.GetName(), allbkg_norm, floatparams , w_err, p, kGreen+1, "F", 3001)
-#allbkg_norm.setError(allbkg_norm_err_val)
-slope_nuis	= w_err.var('slope_nuis')
-slope_nuis.setError(0.05)
 
 
 
-#draw_error_band(allbkgsig_pdf, rrv_x.GetName(), norm4error, RooArgList(slope_nuis), w_err, p, kWhite, "F", 3144)
 if options.POI=='cwww':
 	w_err.var('cwww').setVal(12)
 	w_err.var('ccw').setVal(0)
@@ -156,14 +136,11 @@ Sig_norm.setVal(w_err.function('normfactor_3d_%s_%s'%(cat,ch)).getVal()*VV_norm_
 norm4error	= RooRealVar('norm4error','norm4error',allbkg_norm_val + Sig_norm.getVal())
 allbkgsig_pdf.plotOn(p,RooFit.Normalization(norm4error.getVal(),RooAbsReal.NumEvent), RooFit.LineColor(kBlack), RooFit.LineWidth(2), RooFit.LineStyle(2), RooFit.LineColor(kViolet))#, RooFit.LineStyle(kDashed))
 rrv_x.setRange('hi',900,3500)
-#Sig_pdf.plotOn(p,RooFit.Normalization(Sig_norm.getVal(),RooAbsReal.NumEvent), RooFit.LineColor(kViolet))
-#VV_pdf.plotOn(p,RooFit.Normalization(VV_norm_val,RooAbsReal.NumEvent), RooFit.LineColor(kOrange))
-#VV_pdf.plotOn(p,RooFit.Normalization(VV_norm_val,RooAbsReal.NumEvent), RooFit.LineColor(kOrange))
+
 w_sig.var('slope_nuis').setVal(1)
 
 
 leg	= TLegend(0.65,0.5,0.89,0.89)
-#leg.AddEntry(p.getObject(9),'bkg + signal %s'%latex_par[options.POI],'l')
 leg.AddEntry(p.getObject(9),'signal %s'%latex_par[options.POI],'l')
 leg.AddEntry(p.getObject(0),'W+Jets','F')
 leg.AddEntry(p.getObject(1),'t#bar{t}','F')
@@ -181,6 +158,7 @@ else:
 
 
 p.GetYaxis().SetRangeUser(0.002,5e3)
+p.GetXaxis().SetRangeUser(900,3500)
 p.GetYaxis().SetTitle('events / 100 GeV')
 p.SetTitle('')
 p.Draw()
@@ -191,21 +169,23 @@ CMS_lumi.extraText	= 'preliminary'
 CMS_lumi.CMS_lumi(c,4,11)
 c.Draw()
 c.Update()
-#c.SaveAs('%s_%s_%s.png'%(cat,ch,options.POI))
+c.SaveAs('../docuplots/%s_%s_%s.png'%(cat,ch,options.POI))
+c.SaveAs('../docuplots/%s_%s_%s.pdf'%(cat,ch,options.POI))
 
 c2=TCanvas('c2','c2',1)
 c2.cd()
 if ch=='el':
-	plothi = 80
+	plothi = 135
 elif ch=='mu':
-	plothi = 110
+	plothi = 200
 p.GetYaxis().SetRangeUser(0,plothi)
 p.GetXaxis().SetRangeUser(900,1500)
 p.Draw()
 leg.Draw("SAME")
 CMS_lumi.CMS_lumi(c2,4,11)
 c2.Draw()
-#c2.SaveAs('%s_%s_%s_lin.png'%(cat,ch,options.POI))
+c2.SaveAs('../docuplots/%s_%s_%s_lin.png'%(cat,ch,options.POI))
+c2.SaveAs('../docuplots/%s_%s_%s_lin.pdf'%(cat,ch,options.POI))
 
 print allbkg_norm.getError()/WJets_norm.getVal()
 print Sig_norm.getVal(),' / ',VV_norm_val
@@ -213,5 +193,6 @@ print VV_norm_val
 print STop_norm_val
 print TTbar_norm_val
 print WJets_norm_val
+print allbkg_norm.getVal()
 raw_input('.,')
 
