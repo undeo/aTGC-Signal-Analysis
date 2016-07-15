@@ -5,7 +5,7 @@ lnN1_value	=1.027,1.027,1.027,1.027,1.027,1.027,1.027,1.027,1.027,1.027,1.027,1.
 lnN1_for	=WW_el_TTbar,WW_el_STop,WW_el_signal,WW_mu_TTbar,WW_mu_STop,WW_mu_signal,WZ_el_TTbar,WZ_el_STop,WZ_el_signal,WZ_mu_TTbar,WZ_mu_STop,WZ_mu_signal
 #
 lnN2_name	=CMS_xww_WJ_norm_13TeV
-lnN2_value	=1.119,1.206,1.061,1.094
+lnN2_value	=1.141,1.166,1.114,1.135
 lnN2_for	=WW_el_WJets,WZ_el_WJets,WW_mu_WJets,WZ_mu_WJets
 #
 lnN3_name	=CMS_eff_vtag_tau21_sf_13TeV
@@ -17,36 +17,36 @@ lnN4_value	=1.008,1.008,1.008,1.008
 lnN4_for	=WW_el_TTbar,WZ_el_TTbar,WW_mu_TTbar,WZ_mu_TTbar
 #
 lnN5_name	=CMS_scale_j
-lnN5_value	=0.980/1.020,1.020/0.980,0.977/1.023,1.023/0.977,0.979/1.021,1.021/0.979,0.984/1.016,1.016/0.984,0.973/1.027,1.027/0.973,0.998/1.002,1.002/0.998		
+lnN5_value	=0.976/1.024,1.024/0.976,0.972/1.028,1.028/0.972,0.984/1.016,1.016/0.984,0.977/1.023,1.023/0.977,0.974/1.026,1.026/0.974,0.994/1.006,1.006/0.994		
 lnN5_for	=WW_el_signal,WZ_el_signal,WW_el_TTbar,WZ_el_TTbar,WW_el_STop,WZ_el_STop,WW_mu_signal,WZ_mu_signal,WW_mu_TTbar,WZ_mu_TTbar,WW_mu_STop,WZ_mu_STop
 #
 lnN6_name	=CMS_res_j
 lnN6_value	=1.001,1.001
 lnN6_for	=WW_mu_STop,WZ_mu_STop
 #
-lnN7_name	=CMS_res_e
-lnN7_value	=1.001,1.001
-lnN7_for	=WW_el_TTbar,WZ_el_TTbar
+lnN7_name	=CMS_scale_e
+lnN7_value	=1.006,1.006,0.995,0.995
+lnN7_for	=WW_el_signal,WZ_el_signal,WW_el_STop,WZ_el_STop
 #
-lnN8_name	=CMS_res_m
-lnN8_value	=1.006,1.006,1.010,1.010,1.001,1.001
+lnN8_name	=CMS_scale_m
+lnN8_value	=1.017,1.017,1.016,1.016,1.019,1.019
 lnN8_for	=WW_mu_signal,WZ_mu_signal,WW_mu_TTbar,WZ_mu_TTbar,WW_mu_STop,WZ_mu_STop
 #
 lnN9_name	=pdf_qqbar
-lnN9_value	=1.027,1.027,1.025,1.025,1.007,1.007,1.024,1.024,1.026,1.026,1.006,1.006
+lnN9_value	=1.027,1.027,1.024,1.024,1.004,1.004,1.024,1.024,1.026,1.026,1.004,1.004
 lnN9_for	=WW_el_signal,WZ_el_signal,WW_el_TTbar,WZ_el_TTbar,WW_el_STop,WZ_el_STop,WW_mu_signal,WZ_mu_signal,WW_mu_TTbar,WZ_mu_TTbar,WW_mu_STop,WZ_mu_STop
 #
 lnN10_name	=QCDscale_VV
-lnN10_value	=1.058,1.058,1.060,1.060
+lnN10_value	=1.060,1.060,1.060,1.060
 lnN10_for	=WW_el_signal,WZ_el_signal,WW_mu_signal,WZ_mu_signal
 #
 lnN11_name	=QCDscale_ttbar
-lnN11_value	=1.035,1.035,1.028,1.028,1.035,1.035,1.031,1.031
+lnN11_value	=1.182,1.182,1.027,1.027,1.195,1.195,1.020,1.020
 lnN11_for	=WW_el_TTbar,WZ_el_TTbar,WW_el_STop,WZ_el_STop,WW_mu_TTbar,WZ_mu_TTbar,WW_mu_STop,WZ_mu_STop
 #
 lnN12_name	=CMS_scale_met
-lnN12_value	=1.005,1.005,1.001,1.001,0.992,0.992,0.992,0.992
-lnN12_for	=WW_el_signal,WZ_el_signal,WW_el_TTbar,WZ_el_TTbar,WW_mu_signal,WZ_mu_signal,WW_mu_STop,WZ_mu_STop
+lnN12_value	=1.006,1.006,1.005,1.005,1.012,1.012,1.003,1.003,0.995,0.995
+lnN12_for	=WW_el_signal,WZ_el_signal,WW_el_TTbar,WZ_el_TTbar,WW_el_STop,WZ_el_STop,WW_mu_signal,WZ_mu_signal,WW_mu_STop,WZ_mu_STop
 #
 lnN13_name	=CMS_eff_e
 lnN13_value	=1.010,1.010,1.010,1.010,1.010,1.010
