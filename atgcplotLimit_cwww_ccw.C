@@ -59,8 +59,8 @@ float parmin(const TString& parname)
 float parmax(const TString& parname)
 {
   if (parname.EqualTo("cwww") )  return 20;
-  if (parname.EqualTo("ccw") ) return 30;
-  if (parname.EqualTo("cb") ) return 105;
+  if (parname.EqualTo("ccw") ) return 35;
+  if (parname.EqualTo("cb") ) return 150;
 
   return -999;
 }
@@ -445,19 +445,19 @@ void fillGraphsFromFilesDeltaNLL( const TString& par1name,
     for (size_t j = 0, n = t->GetEntries(); j < n; ++j) {
       t->GetEntry(j);
       printf ("%d\r",j);
-      if(fnames[i].Contains("DUMMY")) {//( !iToy){
+      if( !iToy){
 	//	cout <<"!iToy" << endl;
 	grobs->SetPoint(nobs++,par1,par2,2*deltaNLL);
 	//	cout <<"grobs->SetPoint("<<nobs++<<","<<par1<<","<< par2<< ","<< 2*deltaNLL << endl;
       }
-      else {// if (iToy == -1) {
+      else if (iToy == -1) {
 	//	cout <<"iToy == -1" << endl;
 	grexp->SetPoint(nexp++,par1,par2,2*deltaNLL);
       }
-//      else {
-//	cerr << "Unexpected value for iToy, = " << iToy << endl;
-//	exit(-1);
-//      }
+      else {
+	cerr << "Unexpected value for iToy, = " << iToy << endl;
+	exit(-1);
+      }
     } // tree entry loop
 
     f->Close();
@@ -468,10 +468,6 @@ void fillGraphsFromFilesDeltaNLL( const TString& par1name,
 
   m_graphs["exp68"] = (TGraph2D*)grexp->Clone("graph2Dexp68");
   m_graphs["exp99"] = (TGraph2D*)grexp->Clone("graph2Dexp99");
-
-  std::cout<<"filled grpahs" << std::endl;
-  
-//  exit(0);
 
 #if 0
   TCanvas *canv = new TCanvas("tester","tester",500,500);
@@ -574,6 +570,7 @@ draw2DLimitBFstyle(map<string,TList *>& m_contours,
   curv->GetXaxis()->SetTitleFont(42);
   curv->GetYaxis()->SetTitle(par2latex(par2));
   curv->GetYaxis()->SetTitleFont(42);
+  curv->GetYaxis()->SetTitleOffset(1.20);
 
   for (int i=0; i<contLevel->GetSize(); i++) {
     assert(curv);
@@ -708,12 +705,14 @@ draw2DLimitContours(map<string,TList *>& m_contours,
 		    const TString& par1,
 		    const TString& par2,
 		    const TString& plotprefix,
-		    TLegend *legend)
+		    TLegend *legend,
+		    float par1_bestfit,
+		    float par2_bestfit)
 {
 
   //from here we build the two-dimensional aTGC limit
 
-  TCanvas *finalPlot = new TCanvas("final","limits",1);
+  TCanvas *finalPlot = new TCanvas("final","limits",500,500);
   finalPlot->cd();
 
   cout << "Drawing expected 68%" << endl;
@@ -741,15 +740,16 @@ draw2DLimitContours(map<string,TList *>& m_contours,
   curv->GetXaxis()->SetTitle(par2latex(par1));
   curv->GetXaxis()->SetTitleFont(42);
   curv->GetYaxis()->SetTitle(par2latex(par2));
-  curv->GetYaxis()->SetTitleOffset(1.1);
   curv->GetYaxis()->SetTitleFont(42);
-  //curv->GetYaxis()->SetTitleOffset(0.75);
+  curv->GetYaxis()->SetTitleOffset(1.20);
+
+  legend->SetNColumns(2);
 
   for (int i=0; i<contLevel->GetSize(); i++) {
     assert(curv);
     curv->SetLineColor(kBlue);
-    curv->SetLineWidth(3);
-    curv->SetLineStyle(1);
+    curv->SetLineWidth(2);
+    curv->SetLineStyle(9);
     if (!i) {
       curv->Draw("AC");
       legend->AddEntry(curv,"Expected 68% C.L.","L");
@@ -766,8 +766,8 @@ draw2DLimitContours(map<string,TList *>& m_contours,
 
   for (int i=0; i<contLevel->GetSize(); i++) {
     curv->SetLineColor(kGreen);
-    curv->SetLineWidth(3);
-    curv->SetLineStyle(1);
+    curv->SetLineWidth(2);
+    curv->SetLineStyle(9);
     curv->Draw("SAME C");
     if (!i) legend->AddEntry(curv,"Expected 95% C.L.","L");
     curv=(TGraph *)(contLevel->After(curv));
@@ -779,8 +779,8 @@ draw2DLimitContours(map<string,TList *>& m_contours,
   curv = (TGraph*)(contLevel->First());
   for (int i=0; i<contLevel->GetSize(); i++) {
     curv->SetLineColor(kRed);
-    curv->SetLineWidth(3);
-    curv->SetLineStyle(1);
+    curv->SetLineWidth(2);
+    curv->SetLineStyle(9);
     curv->Draw("SAME C");
     if (!i) legend->AddEntry(curv,"Expected 99% C.L.","L");
     curv=(TGraph *)(contLevel->After(curv));
@@ -795,9 +795,9 @@ draw2DLimitContours(map<string,TList *>& m_contours,
     curv = (TGraph*)(contLevel->First());
 
     for (int i=0; i<contLevel->GetSize(); i++) {
-      //curv->Draw("SAME C");
+      curv->Draw("SAME C");
       curv->SetLineWidth(3);
-      //if (!i) legend->AddEntry(curv,"Observed 95% C.L.","L");
+      if (!i) legend->AddEntry(curv,"Observed 95% C.L.","L");
       curv=(TGraph *)(contLevel->After(curv));
     }
   }
@@ -805,7 +805,12 @@ draw2DLimitContours(map<string,TList *>& m_contours,
   
   TGraph *SMpoint = new TGraph(1);
   SMpoint->SetPoint(1,0,0);
-  //SMpoint->Draw("SAME Po");
+  SMpoint->Draw("SAME P");
+  legend->AddEntry(SMpoint,"SM","P");
+  TGraph *bestfit = new TGraph(1);
+  bestfit->SetPoint(1,par1_bestfit,par2_bestfit);
+  bestfit->Draw("SAME *");
+  legend->AddEntry(bestfit,"Best fit value","P");
   
   //smLabel = TPaveText(0,
   //                    m_contours["-2s"]->GetYaxis()->GetXmax()/8,
@@ -818,7 +823,7 @@ draw2DLimitContours(map<string,TList *>& m_contours,
 
   legend->Draw();
 
-  TPaveText *text = new TPaveText(0.566,0.87,0.965,1.13,"NDC");
+  TPaveText *text = new TPaveText(0.566,0.89,0.965,1.13,"NDC");
   text->SetFillStyle(0);
   text->SetBorderSize(0);
   text->SetTextFont(42);
@@ -869,7 +874,7 @@ draw1DLimit(map<string,TGraph2D *> m_graphs,
 {
   TCanvas *c1 = new TCanvas(Form("%slimit",parname.Data()),
 			    Form("%slimit",parname.Data()),
-			    1);
+			    500,500);
 
   map<string,TGraphAsymmErrors *> m_limits1d;
 
@@ -1060,21 +1065,38 @@ void atgcplotLimit_cwww_ccw()
   vector<TString> fnames;
   //getFileNames(fileglob, fnames);
 
-  fnames.push_back("higgsCombine2Par_linter_cwww0_ccw0.MultiDimFit.mH120.root");
-  //fnames.push_back("higgsCombine2Par_linter_ccw0_cb0.MultiDimFit.mH120.root");
-  //fnames.push_back("higgsCombine2Par_linter_cwww0_cb0.MultiDimFit.mH120.root");
-  //fnames.push_back("higgsCombine2Par_std_cwww0_ccw0.MultiDimFit.mH120.root");
-  //fnames.push_back("higgsCombine2Par_cwww0_ccw0.MultiDimFit.DUMMY.mH120.root");
+  //fnames.push_back("higgsCombine2Par_cwww0_ccw0_exp.MultiDimFit.mH120.root");
+  //fnames.push_back("higgsCombine2Par_cwww0_ccw0_obs.MultiDimFit.mH120.root");
+  //fnames.push_back("higgsCombine2Par_cwww0_ccw0_exp_no_uncert.MultiDimFit.mH120.root");
+  //fnames.push_back("higgsCombine2Par_cwww0_ccw0_obs_no_uncert.MultiDimFit.mH120.root");
+  //fnames.push_back("higgsCombine2Par_cwww0_ccw0_exp_WW.MultiDimFit.mH120.root");
+  //fnames.push_back("higgsCombine2Par_cwww0_ccw0_obs_WW.MultiDimFit.mH120.root");
+  //fnames.push_back("higgsCombine2Par_cwww0_ccw0_exp_WZ.MultiDimFit.mH120.root");
+  //fnames.push_back("higgsCombine2Par_cwww0_ccw0_obs_WZ.MultiDimFit.mH120.root");
+  fnames.push_back("higgsCombine2Par_cwww0_ccw0_exp_WV.MultiDimFit.mH120.root");
+  fnames.push_back("higgsCombine2Par_cwww0_ccw0_obs_WV.MultiDimFit.mH120.root");
+  //fnames.push_back("higgsCombine2Par_cwww0_ccw0_exp_noatgcint.MultiDimFit.mH120.root");
+  //fnames.push_back("higgsCombine2Par_cwww0_ccw0_obs_noatgcint.MultiDimFit.mH120.root");
+  //fnames.push_back("higgsCombine2Par_cwww0_ccw0_exp_noSMint.MultiDimFit.mH120.root");
+  //fnames.push_back("higgsCombine2Par_cwww0_ccw0_obs_noSMint.MultiDimFit.mH120.root");
+
 
   assert(fnames.size());
 
   TString   par1;
   TString   par2;
-  
   par1 = TString("cwww");
-  //par1 = TString("ccw");
   par2 = TString("ccw");
-  //par2 = TString("cb");
+
+  
+  float par1_bestfit	= 0;
+  float par2_bestfit	= 0;
+  TTree * tree	= (TTree*)TFile::Open(fnames[1])->Get("limit");
+  tree->SetBranchAddress(par1, &par1_bestfit);
+  tree->SetBranchAddress(par2, &par2_bestfit);
+  tree->GetEntry(0); 
+
+
 
   if (!par1.Length() || !par2.Length() ) {
     cerr << "Unknown coupling parameters in name " << fnames[0] << endl;
@@ -1086,7 +1108,10 @@ void atgcplotLimit_cwww_ccw()
     method = TString("asympCLs");
   else if (fnames[0].Contains("MultiDimFit"))
     method = TString("deltaNLL");
- 
+
+  // try this:
+  //  method = TString("asympCLs");
+  
 
   cout << "Plotting " << par2 << " versus " << par1 << ", method = " << method << endl;
 
@@ -1129,6 +1154,17 @@ void atgcplotLimit_cwww_ccw()
       m_contourlevels[keys[i]] = 1;
   }
 
+  // try this
+  /*
+    fillGraphsFromFiles        (par1,par2,fnames,keys,m_graphs);
+    for (size_t i=0; i<keys.size(); i++)
+      m_contourlevels[keys[i]] = 1;
+  */
+  // return;
+
+  // for limit in limits:
+  //   limits[limit]->Print()
+
 
 #if 0
   // for a first look
@@ -1148,8 +1184,8 @@ void atgcplotLimit_cwww_ccw()
   collectContours(m_graphs,keys,m_contourlevels,m_contours);
 
   //  TLegend *legend = new TLegend(0.212,0.686,0.554,0.917,"","NDC");
-  TLegend *legend = new TLegend(0.2,0.89,0.8,0.75,"","NDC");
-  legend->SetFillStyle(0);
+  TLegend *legend = new TLegend(0.2,0.7,0.89,0.89,"","NDC");
+  legend->SetFillColor(0);
   legend->SetBorderSize(0);
   legend->SetHeader("CMS Preliminary");
   //legend->SetHeader("CMS");
@@ -1158,7 +1194,7 @@ void atgcplotLimit_cwww_ccw()
   TString plotprefix=Form("%s_%s_2dlimit_%s",par1.Data(),par2.Data(),method.Data());
 
   if (method.EqualTo("deltaNLL"))
-    draw2DLimitContours(m_contours,par1,par2,plotprefix,legend);
+    draw2DLimitContours(m_contours,par1,par2,plotprefix,legend,par1_bestfit,par2_bestfit);
   else
     draw2DLimitBFstyle(m_contours,par1,par2,plotprefix,legend);
 
