@@ -18,6 +18,7 @@ parser	= OptionParser()
 parser.add_option('-n', '--newtrees', action='store_true', dest='newtrees', default=False, help='recreate input trees')
 parser.add_option('--n2', action='store_true', dest='newhists', default=False, help='recreate histograms')
 parser.add_option('-p', '--plots', action='store_true', dest='make_plots', default=False, help='make plots')
+parser.add_option('--savep', action='store_true', dest='savep', default=False, help='save plots')
 parser.add_option('--p2', action='store_true', dest='make_plots2', default=False, help='make parabel plot')
 parser.add_option('--p3', action='store_true', dest='make_plots3', default=False, help='plot')
 parser.add_option('--cat', dest='cat', default='WWWZ', help='category, WW or WZ, defines signal region')
@@ -25,13 +26,14 @@ parser.add_option('--std', action='store_true', dest='std', default=False, help=
 parser.add_option('--linter', action='store_true', dest='linter', default=False, help='include SM- and aTGC-interference')
 parser.add_option('--oldfunc', action='store_true', dest='oldfunc', default=False, help='use simple exponential for aTGC')
 parser.add_option('-b', action='store_true', dest='batch', default=False, help='batch mode')
-parser.add_option('-c', dest='chan', default='elmu', help='channel, el, mu or elmu')
+parser.add_option('-c', '--ch', dest='chan', default='elmu', help='channel, el, mu or elmu')
 parser.add_option('--makeratios', action='store_true', dest='make_ratios', default=False, help='make new WW/WZ ratios')
 parser.add_option('--noatgcint', action='store_true', dest='noatgcint', default=False, help='set atgc-interference coefficients to zero')
+parser.add_option('--noSMint', action='store_true', dest='noSMint', default=False, help='set SM interference coefficients to zero (after fits!) !')
 parser.add_option('--printatgc', action='store_true', default=False, help='print atgc-interference contribution')
 parser.add_option('--yieldplots', action='store_true', default=False, help='make plots of relative yields')
 parser.add_option('--linfitplot', action='store_true', default=False, help='make plot of SM interference fit')
-parser.add_option('--lo', dest='mlvj_lo', default=600)
+parser.add_option('--lo', dest='mlvj_lo', default=900)
 parser.add_option('--hi', dest='mlvj_hi', default=3500)
 
 
@@ -51,7 +53,17 @@ if not os.path.isdir('Output'):
 if not os.path.isdir('docuplots'):
 	os.system('mkdir docuplots')
 
+
+
 def make_ATGCtree(ch='el', signal_cat='WW'):
+
+	if ch=='el':
+		METCUT	= 80.
+	elif ch=='mu':
+		METCUT	= 40.
+	else:
+		raise RuntimeError('no such channel %s'%ch)
+
 
 	if signal_cat == 'WW':
 		sigreg 	= 'lo'
@@ -60,6 +72,10 @@ def make_ATGCtree(ch='el', signal_cat='WW'):
 	elif signal_cat == 'WZ':
 		sigreg	= 'hi'
 		mj_lo	= 85.
+		mj_hi	= 105
+	elif signal_cat == 'WV':
+		sigreg	= 'all'
+		mj_lo	= 65.
 		mj_hi	= 105
 	else:
 		raise RuntimeError('no such category: %s'%signal_cat)
@@ -83,6 +99,7 @@ def make_ATGCtree(ch='el', signal_cat='WW'):
 		branch_c_bl	= treeATGC_tmp.Branch('c_bl',c_bl,'c_bl')
 
 		lumi_tmp 	= 2300.
+
 		for i in range(treeInATGC.GetEntries()):
 			if i%10000==0:
 				print i
@@ -92,7 +109,7 @@ def make_ATGCtree(ch='el', signal_cat='WW'):
 			and treeInATGC.Mjpruned<mj_hi and treeInATGC.Mjpruned>mj_lo \
 			and treeInATGC.W_pt>200. and treeInATGC.deltaR_LeptonWJet>math.pi/2. \
 			and abs(treeInATGC.deltaPhi_WJetMet)>2. and abs(treeInATGC.deltaPhi_WJetWlep)>2.\
-			and treeInATGC.nbtag==0:
+			and treeInATGC.nbtag==0 and treeInATGC.pfMET>METCUT:
 				weight_part	= 1/20. * lumi_tmp * treeInATGC.totWeight
 				#SM
 				c_wwwl[0] = 0; c_wl[0] = 0; c_bl[0] = 0;
@@ -137,7 +154,7 @@ def make_ATGCtree(ch='el', signal_cat='WW'):
 	print '--------> Written to file ' + fileOut.GetName()
 
 
-def make_plots(rrv_x,wtmp,ch,cat,channel,fitres,binlo,binhi):
+def make_plots(rrv_x,wtmp,ch,cat,channel,fitres,binlo,binhi,binlo4fit):
         
         can             = []
 	can2		= []
@@ -147,9 +164,8 @@ def make_plots(rrv_x,wtmp,ch,cat,channel,fitres,binlo,binhi):
 	
 	rrv_x.setVal(2000)
 
-
 	for i in range(3):
-		rrv_x.setRange(binlo,binhi)
+		rrv_x.setRange(binlo4fit,binhi)
                 p       = rrv_x.frame(binlo,binhi)
 		p2	= rrv_x.frame(binlo,binhi)
                 c       = TCanvas(POI[i]+'-',POI[i]+'-',1)
@@ -167,7 +183,6 @@ def make_plots(rrv_x,wtmp,ch,cat,channel,fitres,binlo,binhi):
 		plots2.append(p2)
 		pads.append(p2pads)
 
-		
 	for i in range(3):
 
 		can[i].cd()
@@ -176,34 +191,21 @@ def make_plots(rrv_x,wtmp,ch,cat,channel,fitres,binlo,binhi):
 		pads[i][0].SetLeftMargin(0.1)
 		pads[i][1].SetLeftMargin(0.1)
 		
-		if binlo==600:
-			norm = wtmp.function('normfactor_3d_4fit_%s'%channel)
-			name = ''
-		elif binlo==900:
-			norm = wtmp.function('normfactor_3d_%s'%channel)
-			name = 'hi'
-		else:#will produce wrong normalization
-			norm = wtmp.function('normfactor_3d_%s'%channel)
-			name = 'hi'
-
+		norm = wtmp.function('normfactor_3d_4fit_%s'%channel)
 
 		for j in range(3):
 			wtmp.var(POI[j]).setVal(0)
-		wtmp.data('SMdatahist'+name).plotOn(plots[i],RooFit.MarkerColor(kBlack),RooFit.LineColor(kBlack),RooFit.DataError(RooAbsData.SumW2),RooFit.DrawOption('E'))
-		normvalSM	= norm.getVal() * wtmp.data('SMdatahist'+name).sumEntries()
+		wtmp.data('SMdatahist4fit').plotOn(plots[i],RooFit.MarkerColor(kBlack),RooFit.LineColor(kBlack),RooFit.DataError(RooAbsData.SumW2),RooFit.DrawOption('E0'))
+		normvalSM	= norm.getVal() * wtmp.data('SMdatahist4fit').sumEntries()
 
-		wtmp.pdf('aTGC_model_%s'%channel).plotOn(plots[i],\
-					      RooFit.LineColor(kBlack),\
-					      RooFit.Normalization(normvalSM, RooAbsReal.NumEvent))
+		wtmp.pdf('aTGC_model_%s'%channel).plotOn(plots[i],RooFit.LineColor(kBlack),RooFit.Normalization(normvalSM, RooAbsReal.NumEvent))
 
-		wtmp.data('neg_datahist%s_%s'%(name,POI[i])).plotOn(plots[i],RooFit.MarkerColor(kBlue),RooFit.LineColor(kBlue),RooFit.DataError(RooAbsData.SumW2),RooFit.DrawOption('E'))
+		wtmp.data('neg_datahist4fit_%s'%POI[i]).plotOn(plots[i],RooFit.MarkerColor(kBlue),RooFit.LineColor(kBlue),RooFit.DataError(RooAbsData.SumW2),RooFit.DrawOption('E0'))
 		wtmp.var(POI[i]).setVal(-par_max[POI[i]])
-		normvalneg = norm.getVal() * wtmp.data('SMdatahist'+name).sumEntries()
-		wtmp.pdf('aTGC_model_%s'%channel).plotOn(plots[i],\
-					      RooFit.LineColor(kBlue),\
-					      RooFit.Normalization(normvalneg, RooAbsReal.NumEvent))
+		normvalneg = norm.getVal() * wtmp.data('SMdatahist4fit').sumEntries()
+		wtmp.pdf('aTGC_model_%s'%channel).plotOn(plots[i],RooFit.LineColor(kBlue),RooFit.Normalization(normvalneg, RooAbsReal.NumEvent))
 	
-		pullhist = plots[i].pullHist('h_neg_datahist%s_%s'%(name,POI[i]),'aTGC_model_%s_Norm[rrv_mass_lvj]'%channel)
+		pullhist = plots[i].pullHist('h_neg_datahist4fit_%s'%POI[i],'aTGC_model_%s_Norm[rrv_mass_lvj]'%channel)
 		
 		if ch == 'el':
 			plotmin = 1e-4
@@ -217,6 +219,9 @@ def make_plots(rrv_x,wtmp,ch,cat,channel,fitres,binlo,binhi):
 			if signal_category == 'WZ':
 				plotmin = 1e-3
 				plotmax = 50
+		if signal_category=='WV':
+			plotmin	= 1e-2
+			plotmax	= 1.5e2
 		plots[i].GetYaxis().SetRangeUser(plotmin,plotmax)
 		pads[i][0].cd()
 		pads[i][0].SetLogy()
@@ -240,57 +245,74 @@ def make_plots(rrv_x,wtmp,ch,cat,channel,fitres,binlo,binhi):
 
 
 		can[i].Update()
-		
-		can[i].SaveAs('docuplots/%s_neg_%s.pdf'%(POI[i],channel))
-		can[i].SaveAs('docuplots/%s_neg_%s.png'%(POI[i],channel))
+		if options.savep:
+			can[i].SaveAs('docuplots/%s_neg_%s.pdf'%(POI[i],channel))
+			can[i].SaveAs('docuplots/%s_neg_%s.png'%(POI[i],channel))
 		
 
 		for j in range(3):
 			wtmp.var(POI[j]).setVal(0)
-		wtmp.data('SMdatahist'+name).plotOn(plots2[i],RooFit.MarkerColor(kBlack),RooFit.LineColor(kBlack),RooFit.DataError(RooAbsData.SumW2),RooFit.DrawOption('E'))
-		wtmp.data('pos_datahist%s_%s'%(name,POI[i])).plotOn(plots2[i],RooFit.MarkerColor(kBlue),RooFit.LineColor(kBlue),RooFit.DataError(RooAbsData.SumW2),RooFit.DrawOption('E'))
+		wtmp.data('SMdatahist4fit').plotOn(plots2[i],RooFit.MarkerColor(kBlack),RooFit.LineColor(kBlack),RooFit.DataError(RooAbsData.SumW2),RooFit.DrawOption('E0'))
+		wtmp.data('pos_datahist4fit_%s'%POI[i]).plotOn(plots2[i],RooFit.MarkerColor(kBlue),RooFit.LineColor(kBlue),RooFit.DataError(RooAbsData.SumW2),RooFit.DrawOption('E0'))
 
-		wtmp.pdf('aTGC_model_%s'%channel).plotOn(plots2[i],\
-					      RooFit.LineColor(kBlack),\
-					      RooFit.Normalization(normvalSM, RooAbsReal.NumEvent))
+		wtmp.pdf('aTGC_model_%s'%channel).plotOn(plots2[i],RooFit.LineColor(kBlack),RooFit.Normalization(normvalSM, RooAbsReal.NumEvent))
 		wtmp.var(POI[i]).setVal(par_max[POI[i]])
-		normvalpos = norm.getVal() * wtmp.data('SMdatahist'+name).sumEntries()
+		normvalpos = norm.getVal() * wtmp.data('SMdatahist4fit').sumEntries()
 
-        	wtmp.pdf('aTGC_model_%s'%channel).plotOn(plots2[i],\
-					      RooFit.LineColor(kBlue),\
-					      RooFit.Normalization(normvalpos, RooAbsReal.NumEvent))
+        	wtmp.pdf('aTGC_model_%s'%channel).plotOn(plots2[i],RooFit.LineColor(kBlue),RooFit.Normalization(normvalpos, RooAbsReal.NumEvent))
 		
-		wtmp.data('pos_datahist%s_%s'%(name,POI[i])).plotOn(plots2[i],RooFit.MarkerColor(kBlue),RooFit.LineColor(kBlue),RooFit.DataError(RooAbsData.SumW2),RooFit.DrawOption('E'))
+		wtmp.data('pos_datahist4fit_%s'%POI[i]).plotOn(plots2[i],RooFit.MarkerColor(kBlue),RooFit.LineColor(kBlue),RooFit.DataError(RooAbsData.SumW2),RooFit.DrawOption('E'))
 		plots2[i].GetYaxis().SetRangeUser(plotmin,plotmax)
+		plots2[i].GetYaxis().SetTitle('arbitrary units')
 		can2[i].cd()
 		pads[i][2].Draw()
 		pads[i][3].Draw()
 		pads[i][2].SetLeftMargin(0.1)
 		pads[i][3].SetLeftMargin(0.1)
-
 		plots2[i].SetTitle('')
 		pads[i][2].SetLogy()
 		pads[i][2].cd()
 		plots2[i].Draw()
-		pullhist2 = plots2[i].pullHist('h_pos_datahist%s_%s'%(name,POI[i]),'aTGC_model_%s_Norm[rrv_mass_lvj]'%channel)
+		pullhist2 = plots2[i].pullHist('h_pos_datahist4fit_%s'%POI[i],'aTGC_model_%s_Norm[rrv_mass_lvj]'%channel)
 		pads[i][3].cd()
 		ratio_style.Draw("")
 		pullhist2.SetLineColor(kBlue)
 		pullhist2.Draw("E1")
 
 		can2[i].Update()
-
-		can2[i].SaveAs('docuplots/%s_pos_%s.pdf'%(POI[i],channel))
-		can2[i].SaveAs('docuplots/%s_pos_%s.png'%(POI[i],channel))
+		if options.savep:
+			can2[i].SaveAs('docuplots/%s_pos_%s.pdf'%(POI[i],channel))
+			can2[i].SaveAs('docuplots/%s_pos_%s.png'%(POI[i],channel))
 		
-
-	raw_input('plots plotted')
-
+	if not options.batch:
+		raw_input('plots plotted')
+	for i in range(3):
+		can[i].Delete()
+		can2[i].Delete()
+		for j in range(4):
+			pads[i][j].Delete()
 
 
 def make_input(ch = 'el', signal_cat = 'WW', binlo = 900, binhi = 3500):
-
-	binlo4fit	= 600
+	if signal_cat=='WV' and not options.oldfunc:
+		raw_input("error functions not optimized for WV!")
+	if signal_cat == 'WW':
+		sigreg 	= 'lo'
+		mj_lo	= 65.
+		mj_hi	= 85.
+	elif signal_cat == 'WZ':
+		sigreg	= 'hi'
+		mj_lo	= 85.
+		mj_hi	= 105
+	elif signal_cat == 'WV':
+		sigreg	= 'all'
+		mj_lo	= 65.
+		mj_hi	= 105.
+	
+	if signal_cat=='WV':
+		binlo4fit	= 900
+	else:
+		binlo4fit	= 600
 
 	if not options.linter and not options.std:
 		raise RuntimeError('no options chosen!')
@@ -315,6 +337,8 @@ def make_input(ch = 'el', signal_cat = 'WW', binlo = 900, binhi = 3500):
 		fileInATGC	= TFile.Open('Output/ATGC-Tree_lo_%s.root'%ch)
 	elif cat == 'WZ':
 		fileInATGC	= TFile.Open('Output/ATGC-Tree_hi_%s.root'%ch)
+	elif cat == 'WV':
+		fileInATGC	= TFile.Open('Output/ATGC-Tree_all_%s.root'%ch)
 	else:
 		raise RuntimeError('no such category: %s'%cat)
 	treeATGC	= fileInATGC.Get('BasicTree')
@@ -370,7 +394,11 @@ def make_input(ch = 'el', signal_cat = 'WW', binlo = 900, binhi = 3500):
 		SM_hist.Sumw2(kTRUE)
 		histall3	= TH1F('c_histall3','c_histall3',nbins4fit,binlo4fit,binhi)
 		histall3.Sumw2(kTRUE)
-		fileOutHist	= TFile.Open('Output/hists4scale_%s_%s_%s.root'%(channel,binlo,binhi),'recreate')
+		dif_hist_ccw	= TH1F('c_dif_hist_ccw','dif_hist_ccw',nbins,binlo,binhi)
+		dif_hist_ccw.Sumw2(kTRUE)
+		dif_hist_cb	= TH1F('c_dif_hist_cb','dif_hist_cb',nbins,binlo,binhi)
+		dif_hist_cb.Sumw2(kTRUE)
+		fileOutHist	= TFile.Open('Output/hists4scale_%s_%s_%s.root'%(channel,binlo4fit,binhi),'recreate')
 		for i in range(treeATGC.GetEntries()):
 			if i%25000==0:
 				print str(i) + '/' + str(treeATGC.GetEntries())
@@ -410,18 +438,23 @@ def make_input(ch = 'el', signal_cat = 'WW', binlo = 900, binhi = 3500):
 			hists4scale[2].SetBinContent(i,hists4scale[0].GetBinContent(i)-hists4scale[1].GetBinContent(i))
 			hists4scale[7].SetBinContent(i,hists4scale[5].GetBinContent(i)-hists4scale[6].GetBinContent(i))
 			hists4scale[12].SetBinContent(i,hists4scale[10].GetBinContent(i)-hists4scale[11].GetBinContent(i))
+		for i in range(nbins):
+			dif_hist_ccw.SetBinContent(i,hists4scale[8].GetBinContent(i)-hists4scale[9].GetBinContent(i))
+			dif_hist_cb.SetBinContent(i,hists4scale[13].GetBinContent(i)-hists4scale[14].GetBinContent(i))
 		for i in range(len(hists4scale)):
 			hists4scale[i].Write()
 			hists4scale[i].Print()
 		SM_hist4fit.Write()
 		SM_hist.Write()
 		histall3.Write()
+		dif_hist_ccw.Write()
+		dif_hist_cb.Write()
 		print '-------> Written to file Output/%s'%fileOutHist.GetName()
 		fileOutHist.Close()
 
 
 	#get SM histogram and make RooDataHist
-	fileInHist	= TFile.Open('Output/hists4scale_%s_%s_%s.root'%(channel,binlo,binhi))
+	fileInHist	= TFile.Open('Output/hists4scale_%s_%s_%s.root'%(channel,binlo4fit,binhi))
 	rrv_mass_lvj.setRange(binlo4fit,binhi)
 	SMdatahist4fit	= RooDataHist('SMdatahist4fit','SMdatahist4fit',RooArgList(rrv_mass_lvj),fileInHist.Get('c_SM_hist4fit'))
 	rrv_mass_lvj.setRange(binlo,binhi)
@@ -459,9 +492,9 @@ def make_input(ch = 'el', signal_cat = 'WW', binlo = 900, binhi = 3500):
 		Erf_offset_cwww	= RooRealVar('Erf_offset_cwww_%s'%channel,'Erf_offset_cwww_%s'%channel,1000.,600.,1500.)
 		Erf_offset_ccw	= RooRealVar('Erf_offset_ccw_%s'%channel,'Erf_offset_ccw_%s'%channel,1000.,600.,1500.)
 		Erf_offset_cb	= RooRealVar('Erf_offset_cb_%s'%channel,'Erf_offset_cb_%s'%channel,1000.,600.,1500.)
-	elif cat=='WZ':
+	elif cat=='WZ' or (ch=='mu' and cat=='WV'):
 		if ch=='el':
-			Erf_width_cwww	= RooRealVar('Erf_width_cwww_%s'%channel,'Erf_width_cwww_%s'%channel,1000.,100.,2000.)
+			Erf_width_cwww	= RooRealVar('Erf_width_cwww_%s'%channel,'Erf_width_cwww_%s'%channel,1500.,375.,2000.)
 			Erf_width_ccw	= RooRealVar('Erf_width_ccw_%s'%channel,'Erf_width_ccw_%s'%channel,1500.,375.,2000.)
 		elif ch=='mu':
 			Erf_width_cwww	= RooRealVar('Erf_width_cwww_%s'%channel,'Erf_width_cwww_%s'%channel,500.,375.,600.)
@@ -470,6 +503,17 @@ def make_input(ch = 'el', signal_cat = 'WW', binlo = 900, binhi = 3500):
 		Erf_offset_cwww	= RooRealVar('Erf_offset_cwww_%s'%channel,'Erf_offset_cwww_%s'%channel,1000.,500.,1500.)
 		Erf_offset_ccw	= RooRealVar('Erf_offset_ccw_%s'%channel,'Erf_offset_ccw_%s'%channel,1000.,500.,1500.)
 		Erf_offset_cb	= RooRealVar('Erf_offset_cb_%s'%channel,'Erf_offset_cb_%s'%channel,1000.,500.,1500.)
+	elif cat=='WV':
+		Erf_width_cwww	= RooRealVar('Erf_width_cwww_%s'%channel,'Erf_width_cwww_%s'%channel,900.,-2000.,2000)
+		if ch=='el':
+			Erf_width_ccw	= RooRealVar('Erf_width_ccw_%s'%channel,'Erf_width_ccw_%s'%channel,900.,-2000.,2500.)
+			Erf_width_cb	= RooRealVar('Erf_width_cb_%s'%channel,'Erf_width_cb_%s'%channel,900.,-2000.,2500.)
+		elif ch=='mu':
+			Erf_width_ccw	= RooRealVar('Erf_width_ccw_%s'%channel,'Erf_width_ccw_%s'%channel,300.,10.,5000.)
+			Erf_width_cb	= RooRealVar('Erf_width_cb_%s'%channel,'Erf_width_cb_%s'%channel,300.,10.,5000.)
+		Erf_offset_cwww	= RooRealVar('Erf_offset_cwww_%s'%channel,'Erf_offset_cwww_%s'%channel,900.,800.,1500.)
+		Erf_offset_ccw	= RooRealVar('Erf_offset_ccw_%s'%channel,'Erf_offset_ccw_%s'%channel,900.,800.,1500.)
+		Erf_offset_cb	= RooRealVar('Erf_offset_cb_%s'%channel,'Erf_offset_cb_%s'%channel,900.,800.,1500.)
 	Erf_offset_cwww.setConstant(kTRUE)
 	Erf_width_cwww.setConstant(kTRUE)
 	Erf_offset_ccw.setConstant(kTRUE)
@@ -487,13 +531,16 @@ def make_input(ch = 'el', signal_cat = 'WW', binlo = 900, binhi = 3500):
 
 
 	for i in range(len(POI)):	
-		fileInHist	= TFile.Open('Output/hists4scale_%s_%s_%s.root'%(channel,binlo,binhi))
+		fileInHist	= TFile.Open('Output/hists4scale_%s_%s_%s.root'%(channel,binlo4fit,binhi))
 		rrv_mass_lvj.setRange(binlo4fit,binhi)
 		pos_datahist4fit	= RooDataHist('pos_datahist4fit_%s'%POI[i],'pos_datahist4fit_%s'%POI[i],RooArgList(rrv_mass_lvj),fileInHist.Get('c_pos_hist4fit_%s'%POI[i]))
 		neg_datahist4fit	= RooDataHist('neg_datahist4fit_%s'%POI[i],'neg_datahist4fit_%s'%POI[i],RooArgList(rrv_mass_lvj),fileInHist.Get('c_neg_hist4fit_%s'%POI[i]))
 		rrv_mass_lvj.setRange(binlo,binhi)		
 		pos_datahist		= RooDataHist('pos_datahist_%s'%POI[i],'pos_datahist_%s'%POI[i],RooArgList(rrv_mass_lvj),fileInHist.Get('c_pos_hist_%s'%POI[i]))
 		neg_datahist		= RooDataHist('neg_datahist_%s'%POI[i],'neg_datahist_%s'%POI[i],RooArgList(rrv_mass_lvj),fileInHist.Get('c_neg_hist_%s'%POI[i]))
+		if cat=='WV' and POI[i]!='cwww':
+			dif_datahist		= RooDataHist('dif_datahist_%s'%POI[i],'dif_datahist_%s'%POI[i],RooArgList(rrv_mass_lvj),fileInHist.Get('c_dif_hist_%s'%POI[i]))
+			getattr(wtmp,'import')(dif_datahist)
 		rrv_mass_lvj.setRange(binlo4fit,binhi)
 		dif_datahist4fit	= RooDataHist('dif_datahist4fit_%s'%POI[i],'dif_datahist4fit_%s'%POI[i],RooArgList(rrv_mass_lvj),fileInHist.Get('c_dif_hist4fit_%s'%POI[i]))
 		fileInHist.Close()
@@ -518,6 +565,7 @@ def make_input(ch = 'el', signal_cat = 'WW', binlo = 900, binhi = 3500):
 		gROOT.SetBatch(True)
 		hist4scale.Fit('pol2')
 		if options.yieldplots:
+			gROOT.SetBatch(False)
 			cc1 = TCanvas()
 			cc1.cd()
 			hist4scale.GetXaxis().SetTitle(par_titles[POI[i]]+' (TeV^{-2})')
@@ -525,6 +573,8 @@ def make_input(ch = 'el', signal_cat = 'WW', binlo = 900, binhi = 3500):
 			hist4scale.GetYaxis().SetTitleSize(0.04)
 			hist4scale.Draw()
 			cc1.Update()
+			#if not options.batch:
+			#	raw_input(POI[i])
 			cc1.SaveAs('docuplots/yields_%s_%s.pdf'%(POI[i],channel))
 			cc1.SaveAs('docuplots/yields_%s_%s.png'%(POI[i],channel))
 			cc1.Close()
@@ -534,6 +584,8 @@ def make_input(ch = 'el', signal_cat = 'WW', binlo = 900, binhi = 3500):
 		par0		= RooRealVar('par0_%s_%s'%(POI[i],channel),'par0_%s_%s'%(POI[i],channel),fitfunc.GetParameter(0)); 		par0.setConstant(kTRUE);
 		par1		= RooRealVar('par1_%s_%s'%(POI[i],channel),'par1_%s_%s'%(POI[i],channel),fitfunc.GetParameter(1)); 		par1.setConstant(kTRUE);
 		par2		= RooRealVar('par2_%s_%s'%(POI[i],channel),'par2_%s_%s'%(POI[i],channel),fitfunc.GetParameter(2)); 		par2.setConstant(kTRUE);
+		if options.noSMint:
+			par1.setVal(0)
 		#again for range used for fit, only needed for plots
 		hist4fit4plot	=TH1F('hist4fit4plot_%s'%POI[i],'hist4fit4plot_%s'%POI[i],3,-1.5*par_max[POI[i]],1.5*par_max[POI[i]])
 		hist4fit4plot.SetBinContent(1,neg_datahist4fit.sumEntries()/SMdatahist4fit.sumEntries())
@@ -543,6 +595,15 @@ def make_input(ch = 'el', signal_cat = 'WW', binlo = 900, binhi = 3500):
 		hist4fit4plot.Fit('pol2')
 		if not options.batch:
 			gROOT.SetBatch(False)
+		if options.yieldplots:
+			cc2		= TCanvas()
+			cc2.cd()
+			hist4fit4plot.Draw()
+			cc2.Draw()
+			cc2.Update()
+			#if not options.batch:
+			#	raw_input(POI[i])
+			cc2.Close()
 		fitfunc4fit	= hist4fit4plot.GetFunction('pol2')
 		par0_4fit	= RooRealVar('par0_4fit_%s_%s'%(POI[i],channel),'par0_4fit_%s_%s'%(POI[i],channel),fitfunc4fit.GetParameter(0)); 		par0_4fit.setConstant(kTRUE);
 		par1_4fit	= RooRealVar('par1_4fit_%s_%s'%(POI[i],channel),'par1_4fit_%s_%s'%(POI[i],channel),fitfunc4fit.GetParameter(1)); 		par1_4fit.setConstant(kTRUE);
@@ -563,13 +624,16 @@ def make_input(ch = 'el', signal_cat = 'WW', binlo = 900, binhi = 3500):
 		scaleshape4fit = RooFormulaVar('scaleshape4fit_%s_%s'%(POI[i],channel),'scaleshape4fit_%s_%s'%(POI[i],channel),\
 						'(@0+@1*@3+@2*@3**2)-1',\
 						RooArgList(par0_4fit,par1_4fit,par2_4fit,wtmp.var(POI[i])))			
-		
-		a2_4fit		= RooRealVar('a_quad_4fit_%s_%s'%(POI[i],channel),'a_quad_4fit_%s_%s'%(POI[i],channel),-0.001,-0.1,0.)
-		a3_4fit		= RooRealVar('a_lin_4fit_%s_%s'%(POI[i],channel),'a_lin_4fit_%s_%s'%(POI[i],channel),-0.001,-0.1,0.)
+		if cat=='WWWV':
+			a2_4fit		= RooRealVar('a_quad_4fit_%s_%s'%(POI[i],channel),'a_quad_4fit_%s_%s'%(POI[i],channel),-0.0001,-0.1,0.)
+			a3_4fit		= RooRealVar('a_lin_4fit_%s_%s'%(POI[i],channel),'a_lin_4fit_%s_%s'%(POI[i],channel),-0.0001,-0.1,0.)
+		else:
+			a2_4fit		= RooRealVar('a_quad_4fit_%s_%s'%(POI[i],channel),'a_quad_4fit_%s_%s'%(POI[i],channel),-0.001,-0.01,0.)
+			a3_4fit		= RooRealVar('a_lin_4fit_%s_%s'%(POI[i],channel),'a_lin_4fit_%s_%s'%(POI[i],channel),-0.001,-0.01,0.)
 		a2_4fit.setConstant(kTRUE)
 		a3_4fit.setConstant(kTRUE)
 		##bigger uncertainty for cb in WZ-category
-		if cat=='WZ' and (POI[i]=='cb'):
+		if (cat=='WZ' and POI[i]=='cb'):
 			a2		= RooFormulaVar('a_quad_nuis_%s_%s'%(POI[i],channel),'a_quad_nuis_%s_%s'%(POI[i],channel),'@0*@1',RooArgList(a2_4fit,eps4cbWZ))
 			a3		= RooFormulaVar('a_lin_nuis_%s_%s'%(POI[i],channel),'a_lin_nuis_%s_%s'%(POI[i],channel),'@0*@1',RooArgList(a3_4fit,eps4cbWZ))
 			cPdf_quad	= RooExponential('Pdf_quad_%s_%s'%(POI[i],channel),'Pdf_quad_%s_%s'%(POI[i],channel),rrv_mass_lvj,a2)
@@ -610,7 +674,7 @@ def make_input(ch = 'el', signal_cat = 'WW', binlo = 900, binhi = 3500):
 			treeInWWinWW.SetBranchStatus('MWW',1)
 			for i in range(treeInWWinWW.GetEntries()):
 				treeInWWinWW.GetEntry(i)
-				if treeInWWinWW.MWW > binlo:
+				if treeInWWinWW.MWW > binlo4fit:
 					WWinWW		+= treeInWWinWW.totEventWeight
 			print 'reading Output/ATGC-Tree_WW_hi_%s.root for WW/WZ ratios'%(ch)
 			fileInWWinWZ	= TFile.Open('Output/ATGC-Tree_WW_hi_%s.root'%(ch))
@@ -620,7 +684,7 @@ def make_input(ch = 'el', signal_cat = 'WW', binlo = 900, binhi = 3500):
 			treeInWWinWZ.SetBranchStatus('MWW',1)
 			for i in range(treeInWWinWZ.GetEntries()):
 				treeInWWinWZ.GetEntry(i)
-				if treeInWWinWZ.MWW > binlo:
+				if treeInWWinWZ.MWW > binlo4fit:
 					WWinWZ		+= treeInWWinWZ.totEventWeight
 			print 'reading Output/ATGC-Tree_WZ_lo_%s.root for WW/WZ ratios'%(ch)
 			fileInWZinWW	= TFile.Open('Output/ATGC-Tree_WZ_lo_%s.root'%(ch))
@@ -630,7 +694,7 @@ def make_input(ch = 'el', signal_cat = 'WW', binlo = 900, binhi = 3500):
 			treeInWZinWW.SetBranchStatus('MWW',1)
 			for i in range(treeInWZinWW.GetEntries()):
 				treeInWZinWW.GetEntry(i)
-				if treeInWZinWW.MWW > binlo:
+				if treeInWZinWW.MWW > binlo4fit:
 					WZinWW		+= treeInWZinWW.totEventWeight
 			print 'reading Output/ATGC-Tree_WZ_hi_%s.root for WW/WZ ratios'%(ch)
 			fileInWZinWZ	= TFile.Open('Output/ATGC-Tree_WZ_hi_%s.root'%(ch))
@@ -640,18 +704,25 @@ def make_input(ch = 'el', signal_cat = 'WW', binlo = 900, binhi = 3500):
 			treeInWZinWZ.SetBranchStatus('MWW',1)
 			for i in range(treeInWZinWZ.GetEntries()):
 				treeInWZinWZ.GetEntry(i)
-				if treeInWZinWZ.MWW > binlo:
+				if treeInWZinWZ.MWW > binlo4fit:
 					WZinWZ		+= treeInWZinWZ.totEventWeight
 			ratio_WW_reg	= (WWinWW)/(WWinWW+WZinWW)
 			ratio_WZ_reg	= (WWinWZ)/(WWinWZ+WZinWZ)
 			WWWZ_ratios	= {'WW' : ratio_WW_reg, 'WZ' : ratio_WZ_reg}
 		else:
+			#pre-approval values:
+			#if ch=='el':
+			#	WWWZ_ratios 	= {'WW' : 0.85870, 'WZ' : 0.47618}
+			#elif ch=='mu':
+			#	WWWZ_ratios	= {'WW' : 0.86257, 'WZ' : 0.51776}
 			if ch=='el':
-				WWWZ_ratios = {'WW' : 0.85870, 'WZ' : 0.47618}
+				WWWZ_ratios 	= {'WW' : 0.8046, 'WZ' : 0.5091, 'WV' : 0.5}
 			elif ch=='mu':
-				WWWZ_ratios = {'WW' : 0.86257, 'WZ' : 0.51776}
+				WWWZ_ratios	= {'WW' : 0.8615, 'WZ' : 0.5159, 'WV' : 0.5}
 
-		print WWWZ_ratios
+		if options.make_ratios:
+			print WWWZ_ratios
+			raw_input('..')
 		WWratio		= WWWZ_ratios[cat]
 		WZratio		= 1-WWWZ_ratios[cat]
 
@@ -687,11 +758,12 @@ def make_input(ch = 'el', signal_cat = 'WW', binlo = 900, binhi = 3500):
 		Pdf_ccw_cb	= RooExponential('Pdf_ccw_cb_%s'%channel,'Pdf_ccw_cb_%s'%channel,rrv_mass_lvj,a7)
 
 		#get factor to scale number of events to simulation level (ratio of N_events for all atgc-parameters negative)	
-		fileInHist	= TFile.Open('Output/hists4scale_%s_%s_%s.root'%(channel,binlo,binhi))
+		fileInHist	= TFile.Open('Output/hists4scale_%s_%s_%s.root'%(channel,binlo4fit,binhi))
 		hist_all3	= fileInHist.Get('c_histall3')
 		hist_all3.Print()
 		hist_all3.Sumw2(kTRUE)
 		datahist_all3	= RooDataHist('datahist_all3','datahist_all3',RooArgList(rrv_mass_lvj),hist_all3)
+		getattr(wtmp,'import')(datahist_all3)
 		fileInHist.Close()
 		N_4norm		= WWratio*w2WW.var('N_4norm4fit').getVal() + WZratio*w2WZ.var('N_4norm4fit').getVal()
 		if options.noatgcint:
@@ -782,8 +854,11 @@ def make_input(ch = 'el', signal_cat = 'WW', binlo = 900, binhi = 3500):
 				N_SM.setVal(0)
 				N_quad_tmp = wtmp.var('N_quad_%s_%s'%(POI[i],channel)).getVal()
 				wtmp.var('N_quad_%s_%s'%(POI[i],channel)).setVal(0)
-	
-				fitres1		= model.fitTo(wtmp.data('dif_datahist4fit_%s'%POI[i]),RooFit.Save(kTRUE), RooFit.SumW2Error(kTRUE))
+				if cat!='WV':
+					fitres1		= model.fitTo(wtmp.data('dif_datahist4fit_%s'%POI[i]),RooFit.Save(kTRUE), RooFit.SumW2Error(kTRUE))
+				else:
+					fitres1		= model.fitTo(wtmp.data('dif_datahist_%s'%POI[i]),RooFit.Save(kTRUE), RooFit.SumW2Error(kTRUE))
+
 				fitresults.append(fitres1)
 
 				if options.linfitplot:
@@ -813,8 +888,11 @@ def make_input(ch = 'el', signal_cat = 'WW', binlo = 900, binhi = 3500):
 				print N_list.at(j).GetName() + ' : ' + str(N_list.at(j).getVal())
 			for j in range(11):
 				print paralist.at(i).GetName() + ' : ' + str(paralist.at(i).getVal())
-			#raw_input("CC")
-			fitres2		= model.fitTo(wtmp.data('pos_datahist4fit_%s'%POI[i]),RooFit.Save(kTRUE), RooFit.SumW2Error(kTRUE))
+			if cat=='WV':
+				rrv_mass_lvj.setRange(900,3500)
+				fitres2		= model.fitTo(wtmp.data('pos_datahist_%s'%POI[i]),RooFit.Save(kTRUE), RooFit.SumW2Error(kTRUE))
+			else:
+				fitres2		= model.fitTo(wtmp.data('pos_datahist4fit_%s'%POI[i]),RooFit.Save(kTRUE), RooFit.SumW2Error(kTRUE))
 			fitresults.append(fitres2)
 			wtmp.var('a_quad_4fit_%s_%s'%(POI[i],channel)).setConstant(kTRUE)
 			wtmp.var('Erf_offset_%s_%s'%(POI[i],channel)).setConstant(kTRUE)
@@ -822,9 +900,13 @@ def make_input(ch = 'el', signal_cat = 'WW', binlo = 900, binhi = 3500):
 			if POI[i]!='cwww':
 				fitres1.Print()
 			fitres2.Print()
+			#raw_input("CC")
 		for i in range(3):
 			wtmp.var(POI[i]).setVal(0)
-
+		
+		if options.noSMint:
+			wtmp.var('N_lin_ccw_%s'%channel).setVal(0)
+			wtmp.var('N_lin_cb_%s'%channel).setVal(0)
 
 		model.Print()
 		getattr(WS,'import')(normfactor_3d)	
@@ -889,6 +971,7 @@ def make_input(ch = 'el', signal_cat = 'WW', binlo = 900, binhi = 3500):
 		getattr(wtmp,'import')(model)
 
 	#read, rename and write bkg pdfs and bkg rates
+
 	fileInWs	= TFile.Open('Input/wwlvj_%s_HP%s_workspace.root'%(ch[:2],cat[1]))
 	w		= fileInWs.Get('workspace4limit_') 
 	w.pdf('STop_xww_%s_HP%s'%(ch,cat[1])).SetName('STop')
@@ -910,20 +993,25 @@ def make_input(ch = 'el', signal_cat = 'WW', binlo = 900, binhi = 3500):
 	#import to workspace
 	getattr(WS,'import')(model)
 
-	path	='/afs/cern.ch/work/c/crenner/CMSSW_7_1_5/src/CombinedEWKAnalysis/CommonTools/data/anomalousCoupling'
+	path	='%s/src/CombinedEWKAnalysis/CommonTools/data/anomalousCoupling'%os.environ["CMSSW_BASE"]
 	output 	= TFile('%s/%s.root'%(path,channel),'recreate')
 
 	data_obs_hist	= TH1F('data_obs_hist','data_obs_hist',binlo,binhi,nbins)
 	data_obs_tree	= TTree('data_obs_tree','data_obs_tree')
 	MWW_data	= array('f',[1])
 	data_obs_tree.Branch('observable',MWW_data,'observable')
+	if ch=='el':
+		METCUT	= 80.
+	elif ch=='mu':
+		METCUT	= 40.
+	else:
+		raise RuntimeError('no such channel %s'%ch)
 	for i in range(tree_data.GetEntries()):
 	  	tree_data.GetEntry(i)
-	    	#add cuts to data?
-		#data still blinded!
-		MWW_data[0] = random.random()
-		data_obs_tree.Fill()
-		data_obs_hist.Fill(MWW_data[0])
+		if tree_data.Mjpruned<mj_hi and tree_data.Mjpruned>mj_lo:
+			MWW_data[0] = tree_data.MWW 
+			data_obs_tree.Fill()
+			data_obs_hist.Fill(MWW_data[0])
 	data_obs_tree.Write()
 	data_obs_hist.Write()
 
@@ -935,8 +1023,8 @@ def make_input(ch = 'el', signal_cat = 'WW', binlo = 900, binhi = 3500):
 
 	#make plots
 	if options.make_plots:
-		#make_plots(rrv_mass_lvj,wtmp,ch,cat,channel,fitresults,900,binhi)
-		make_plots(rrv_mass_lvj,wtmp,ch,cat,channel,fitresults,binlo,binhi)
+		make_plots(rrv_mass_lvj,wtmp,ch,cat,channel,fitresults,600,binhi,binlo4fit)
+		#make_plots(rrv_mass_lvj,wtmp,ch,cat,channel,fitresults,binlo,binhi,binlo4fit)
 	if options.make_plots2:
 		#cross check
 		canvas		= TCanvas(POI[0]+','+POI[1]+','+POI[2] , POI[0]+','+POI[1]+','+POI[2],1)
@@ -947,53 +1035,37 @@ def make_input(ch = 'el', signal_cat = 'WW', binlo = 900, binhi = 3500):
 		pad22.Draw()
 		pad11.SetLogy()
 		pad11.cd()
+		
+		rrv_mass_lvj.Print()
+		rrv_mass_lvj.setRange('all',600,3500)
+		print model.createIntegral(RooArgSet(rrv_mass_lvj),RooArgSet(rrv_mass_lvj),'all').getVal()
+		rrv_mass_lvj.setRange(600,3500)
+		p4		= rrv_mass_lvj.frame(600,3500)
 
-		p4		= rrv_mass_lvj.frame(900,3500)
-		hist_all3	= TH1F('hist_all3','hist_all3',nbins4fit,binlo,binhi)
-		hist_all3.Sumw2(kTRUE)
-		for i in range(treeATGC.GetEntries()):
-			treeATGC.GetEntry(i)
-		    	if (treeATGC.c_wwwl == -12 and treeATGC.c_wl == -20 and treeATGC.c_bl == -60 and treeATGC.MWW > binlo):
-		      		hist_all3.Fill(treeATGC.MWW,treeATGC.totEventWeight)
-		datahist_all3	= RooDataHist('datahist_all3','datahist_all3',RooArgList(rrv_mass_lvj),hist_all3)
 		#wtmp.data('SMdatahist').plotOn(p4,RooFit.MarkerColor(kBlack),RooFit.MarkerSize(0.75))
 
-		datahist_all3.plotOn(p4,RooFit.LineColor(kBlue),RooFit.LineWidth(2),RooFit.DrawOption('E'))
+		#datahist_all3.plotOn(p4,RooFit.LineColor(kBlue),RooFit.LineWidth(2),RooFit.DrawOption('E'))
 		#for i in range(3):
 		#		wtmp.var(POI[i]).setVal(0)
 		#model.plotOn(p4,RooFit.LineColor(kBlack),RooFit.Normalization(wtmp.function('normfactor_3d_%s_%s'%(cat,ch)).getVal()*wtmp.data('SMdatahist').sumEntries(),RooAbsReal.NumEvent))
 		for i in range(3):
-				wtmp.var(POI[i]).setVal(-par_max[POI[i]])
-		normval 	= RooRealVar('normval','normval',wtmp.function('normfactor_3d_4fit_%s'%channel).getVal()*wtmp.data('SMdatahist').sumEntries('rrv_mass_lvj>%s'%binlo))
-		model.plotOn(p4,RooFit.LineColor(kBlue),RooFit.Normalization(normval.getVal(),RooAbsReal.NumEvent))
-		#wtmp.data('SMdatahist').plotOn(p4,RooFit.MarkerColor(kBlack),RooFit.MarkerSize(0.75))
-		datahist_all3.plotOn(p4,RooFit.LineColor(kBlue),RooFit.LineWidth(2),RooFit.DrawOption('E'))
-
-		for i in range(3):
 			wtmp.var(POI[i]).setVal(-par_max[POI[i]])
-		normval = wtmp.function('normfactor_3d_%s_%s'%(cat,ch)).getVal()*wtmp.data('SMdatahist').sumEntries('rrv_mass_lvj>%s'%binlo)
-		print str(normval) + ' / ' + str(datahist_all3.sumEntries())
-		print str((normval/datahist_all3.sumEntries('rrv_mass_lvj>%s'%binlo) -1)*100) + ' %'
+		normval 	= RooRealVar('normval','normval',wtmp.function('normfactor_3d_4fit_%s'%channel).getVal()*wtmp.data('SMdatahist4fit').sumEntries())
+		datahist_all3.plotOn(p4,RooFit.LineColor(kBlue),RooFit.LineWidth(2),RooFit.DrawOption('E'))
+		model.plotOn(p4,RooFit.LineColor(kBlue),RooFit.Normalization(normval.getVal(),RooAbsReal.NumEvent))
+		wtmp.data('SMdatahist4fit').plotOn(p4,RooFit.LineColor(kBlack),RooFit.LineWidth(2),RooFit.DrawOption('E'))
+
+		#normval = wtmp.function('normfactor_3d_4fit_%s'%channel).getVal()*wtmp.data('SMdatahist4fit').sumEntries()
+		print str(normval.getVal()) + ' / ' + str(datahist_all3.sumEntries())
+		print str((normval.getVal()/datahist_all3.sumEntries() -1)*100) + ' %'
+		print wtmp.function('normfactor_3d_4fit_%s'%channel).getVal(), ' , ' , wtmp.data('SMdatahist4fit').sumEntries(), ' , ' ,datahist_all3.sumEntries() 
 		
-		tmp='''
-		for i in range(3):
-			wtmp.var(POI[i]).setVal(0)
-		for i in range(10):
-			for j in range(3):
-				wtmp.var(POI[j]).setVal((i+1)*par_max[POI[j]]/10)
-			model.plotOn(p4,RooFit.LineColor(kMagenta),RooFit.LineWidth(1),RooFit.LineStyle(kDashed),RooFit.Normalization(wtmp.function('normfactor_3d_%s_%s'%(cat,ch)).getVal()*wtmp.data('SMdatahist').sumEntries(),RooAbsReal.NumEvent))
-			for j in range(3):
-				wtmp.var(POI[j]).setVal((i+1)*(-par_max[POI[j]])/10)
-			model.plotOn(p4,RooFit.LineColor(kCyan),RooFit.LineWidth(1),RooFit.LineStyle(kDashed),RooFit.Normalization(wtmp.function('normfactor_3d_%s_%s'%(cat,ch)).getVal()*wtmp.data('SMdatahist').sumEntries(),RooAbsReal.NumEvent))
-		'''
 		plotmin = 0.5
 		#if signal_category == 'WZ':
 		#	plotmin = 1e-3
 		p4.GetYaxis().SetRangeUser(plotmin,p4.GetMaximum()*2)
 		#p4.GetXaxis().SetRangeUser(900,3500)
-		canvas.SetLogy()
-		p4.Draw()
-
+		#canvas.SetLogy()
 		pullhist2 = p4.pullHist('h_datahist_all3','aTGC_model_%s_%s_Norm[rrv_mass_lvj]'%(cat,ch))
 		pad22.cd()
 		data_dif = TH1D('data_dif2','data_dif2',26,900,3500)
@@ -1007,6 +1079,7 @@ def make_input(ch = 'el', signal_cat = 'WW', binlo = 900, binhi = 3500):
 		data_dif.GetYaxis().SetTitleSize(0.05)
 		data_dif.Draw("")
 		pullhist2.SetLineColor(kBlue)
+		pullhisttmp.SetLineColor(kRed)
 		pullhist2.Draw("SAME E1")
 
 
@@ -1015,21 +1088,17 @@ def make_input(ch = 'el', signal_cat = 'WW', binlo = 900, binhi = 3500):
 		canvas.SaveAs('docuplots/atgc3_%s.png'%channel)
 			
 		
-		getattr(wtmp,'import')(datahist_all3)
-		if options.noatgcint:
-			fileOut4plot = TFile.Open('docuplots/make_plots/%s_noatgcint.root'%channel,'RECREATE')
-		else:
-			fileOut4plot = TFile.Open('docuplots/make_plots/%s.root'%channel,'RECREATE')
-		wtmp.Write()
-		fileOut4plot.Close()
-
-		wtmp.Print()
 		raw_input('cross check plot plotted')
 		canvas.Close()
 	
 	for i in range(len(fitresults)):
 		fitresults[i].Print()
-
+	if options.noatgcint:
+		fileOut4plot = TFile.Open('docuplots/make_plots/%s_noatgcint.root'%channel,'RECREATE')
+	else:
+		fileOut4plot = TFile.Open('docuplots/make_plots/%s.root'%channel,'RECREATE')
+	wtmp.Write()
+	fileOut4plot.Close()
 
 	if options.printatgc:
 		wtmp.var('cwww').setVal(12)
@@ -1060,12 +1129,12 @@ if options.cat=='WWWZ':
 		make_input('el','WZ',int(options.mlvj_lo),int(options.mlvj_hi))
 		make_input('mu','WZ',int(options.mlvj_lo),int(options.mlvj_hi))
 	else:
-		make_input(options.chan,'WW',int(options.mlvj_lo),int(option.mlvj_hi))
-		make_input(options.chan,'WZ',int(options.mlvj_lo),int(option.mlvj_hi))
+		make_input(options.chan,'WW',int(options.mlvj_lo),int(options.mlvj_hi))
+		make_input(options.chan,'WZ',int(options.mlvj_lo),int(options.mlvj_hi))
 else:
 	if options.chan=='elmu':
 		make_input('el',options.cat,int(options.mlvj_lo),int(options.mlvj_hi))
 		make_input('mu',options.cat,int(options.mlvj_lo),int(options.mlvj_hi))
 	else:
-		make_input(options.chan,options.cat,int(options.mlvj_lo),int(option.mlvj_hi))
+		make_input(options.chan,options.cat,int(options.mlvj_lo),int(options.mlvj_hi))
 
