@@ -5,7 +5,7 @@ lnN1_value	=1.027,1.027,1.027,1.027,1.027,1.027,1.027,1.027,1.027,1.027,1.027,1.
 lnN1_for	=WW_el_TTbar,WW_el_STop,WW_el_signal,WW_mu_TTbar,WW_mu_STop,WW_mu_signal,WZ_el_TTbar,WZ_el_STop,WZ_el_signal,WZ_mu_TTbar,WZ_mu_STop,WZ_mu_signal
 #
 lnN2_name	=CMS_xww_WJ_norm_13TeV
-lnN2_value	=1.141,1.166,1.114,1.135
+lnN2_value	=1.168,1.195,1.127,1.143
 lnN2_for	=WW_el_WJets,WZ_el_WJets,WW_mu_WJets,WZ_mu_WJets
 #
 lnN3_name	=CMS_eff_vtag_tau21_sf_13TeV
@@ -26,14 +26,14 @@ lnN6_for	=WW_mu_STop,WZ_mu_STop
 #
 lnN7_name	=CMS_scale_e
 lnN7_value	=1.006,1.006,0.995,0.995
-lnN7_for	=WW_el_signal,WZ_el_signal,WW_el_STop,WZ_el_STop
+lnN7_for	=WW_el_signal,WZ_el_signal,WW_el_STop,WZ_el_STop,
 #
 lnN8_name	=CMS_scale_m
 lnN8_value	=1.017,1.017,1.016,1.016,1.019,1.019
 lnN8_for	=WW_mu_signal,WZ_mu_signal,WW_mu_TTbar,WZ_mu_TTbar,WW_mu_STop,WZ_mu_STop
 #
 lnN9_name	=pdf_qqbar
-lnN9_value	=1.027,1.027,1.024,1.024,1.004,1.004,1.024,1.024,1.026,1.026,1.004,1.004
+lnN9_value	=1.025,1.025,1.025,1.025,1.003,1.003,1.023,1.023,1.026,1.026,1.004,1.004
 lnN9_for	=WW_el_signal,WZ_el_signal,WW_el_TTbar,WZ_el_TTbar,WW_el_STop,WZ_el_STop,WW_mu_signal,WZ_mu_signal,WW_mu_TTbar,WZ_mu_TTbar,WW_mu_STop,WZ_mu_STop
 #
 lnN10_name	=QCDscale_VV
@@ -41,20 +41,21 @@ lnN10_value	=1.060,1.060,1.060,1.060
 lnN10_for	=WW_el_signal,WZ_el_signal,WW_mu_signal,WZ_mu_signal
 #
 lnN11_name	=QCDscale_ttbar
-lnN11_value	=1.182,1.182,1.027,1.027,1.195,1.195,1.020,1.020
+lnN11_value	=1.187,1.187,1.020,1.020,1.192,1.192,1.020,1.020
 lnN11_for	=WW_el_TTbar,WZ_el_TTbar,WW_el_STop,WZ_el_STop,WW_mu_TTbar,WZ_mu_TTbar,WW_mu_STop,WZ_mu_STop
 #
 lnN12_name	=CMS_scale_met
-lnN12_value	=1.006,1.006,1.005,1.005,1.012,1.012,1.003,1.003,0.995,0.995
-lnN12_for	=WW_el_signal,WZ_el_signal,WW_el_TTbar,WZ_el_TTbar,WW_el_STop,WZ_el_STop,WW_mu_signal,WZ_mu_signal,WW_mu_STop,WZ_mu_STop
+lnN12_value	=1.006,1.006,1.005,1.005,1.012,1.012,1.003,1.003,1.001,1.001,0.995,0.995
+lnN12_for	=WW_el_signal,WZ_el_signal,WW_el_TTbar,WZ_el_TTbar,WW_el_STop,WZ_el_STop,WW_mu_signal,WW_mu_TTbar,WZ_mu_TTbar,WZ_mu_signal,WW_mu_STop,WZ_mu_STop
 #
 lnN13_name	=CMS_eff_e
 lnN13_value	=1.010,1.010,1.010,1.010,1.010,1.010
 lnN13_for	=WW_el_signal,WZ_el_signal,WW_el_TTbar,WZ_el_TTbar,WW_el_STop,WZ_el_STop
 #
 lnN14_name	=CMS_eff_m
-lnN14_value	=1.012,1.012,1.012,1.012,1.012,1.012
+lnN14_value	=1.023,1.023,1.021,1.021,1.022,1.022
 lnN14_for	=WW_mu_signal,WZ_mu_signal,WW_mu_TTbar,WZ_mu_TTbar,WW_mu_STop,WZ_mu_STop
+
 
 model=par1par2par3_TF3
 par1Name = cwww
