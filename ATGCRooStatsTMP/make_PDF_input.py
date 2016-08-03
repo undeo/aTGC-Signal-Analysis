@@ -35,6 +35,7 @@ parser.add_option('--yieldplots', action='store_true', default=False, help='make
 parser.add_option('--linfitplot', action='store_true', default=False, help='make plot of SM interference fit')
 parser.add_option('--lo', dest='mlvj_lo', default=900)
 parser.add_option('--hi', dest='mlvj_hi', default=3500)
+parser.add_option('--atgc', action='store_true', dest='atgc', default=False, help='use anomalous coupling parametrization instead of EFT')
 
 
 (options,args) = parser.parse_args()
@@ -352,13 +353,28 @@ def make_input(ch = 'el', signal_cat = 'WW', binlo = 900, binhi = 3500):
 	eps4cbWZ	= RooFormulaVar('rel_slope_nuis4cbWZ','rel_slope_nuis4cbWZ','1+3*(@0-1)',RooArgList(eps))
 	a1_4fit		= RooRealVar('a_SM_4fit_%s'%channel,'a_SM_4fit_%s'%channel,-0.1,-2,0)
 	a1		= RooFormulaVar('a_SM_%s'%channel,'a_SM_%s'%channel,'@0*@1',RooArgList(a1_4fit,eps))
-	cwww		= RooRealVar('cwww','cwww',0,-120,120);
-	ccw		= RooRealVar('ccw','ccw',0,-200,200);
-	cb		= RooRealVar('cb','cb',0,-600,600);
-	cwww.setConstant(kTRUE);
-	ccw.setConstant(kTRUE);
-	cb.setConstant(kTRUE);
 
+
+	if options.atgc:
+		#raise RuntimeError('not implemented yet')
+		
+		Z_mass		= RooRealVar('Z_mass','Z_mass',0.0911876)
+		W_mass		= RooRealVar('W_mass','W_mass',0.08385)
+		G_F		= RooRealVar('G_F','G_F',11.663787)
+		g_weak		= RooRealVar('g_weak','g_weak',math.sqrt((8*G_F.getVal()*W_mass.getVal()**2)/(math.sqrt(2))))
+		theta_W		= math.acos(W_mass.getVal()/Z_mass.getVal())
+		tan_theta_W 	= RooRealVar('tan_theta_W','tan_theta_W',math.tan(theta_W))
+
+		dg1z		= RooFormulaVar('dg1z','dg1z','@0*@1*@1/2',RooArgList(ccw,Z_mass))
+		lZ		= RooFormulaVar('lZ','lZ','@0*@1*@1*@2*@2/2',RooArgList(cwww,g_weak,W_mass))
+		dkz		= RooFormulaVar('dkz','dkz','(@0-@1*@2*@2)*@3*@3/2',RooArgList(ccw,cb,tan_theta_W,W_mass))
+	else:
+		cwww		= RooRealVar('cwww','cwww',0,-120,120);
+		ccw		= RooRealVar('ccw','ccw',0,-200,200);
+		cb		= RooRealVar('cb','cb',0,-600,600);
+		cwww.setConstant(kTRUE);
+		ccw.setConstant(kTRUE);
+		cb.setConstant(kTRUE);
 
 	##read workspace containing background pdfs
 	fileInWs	= TFile.Open('Input/wwlvj_%s_HP%s_workspace.root'%(ch[:2],cat[1]))
@@ -927,6 +943,21 @@ def make_input(ch = 'el', signal_cat = 'WW', binlo = 900, binhi = 3500):
 
 		a5.Print()
 		a7.Print()
+		tmp='''
+		if options.atgc:
+			#raise RuntimeError('not implemented yet')
+			
+			Z_mass		= RooRealVar('Z_mass','Z_mass',0.0911876)
+			W_mass		= RooRealVar('W_mass','W_mass',0.08385)
+			G_F		= RooRealVar('G_F','G_F',11.663787)
+			g_weak		= RooRealVar('g_weak','g_weak',math.sqrt((8*G_F.getVal()*W_mass.getVal()**2)/(math.sqrt(2))))
+			theta_W		= math.acos(W_mass.getVal()/Z_mass.getVal())
+			tan_theta_W 	= RooRealVar('tan_theta_W','tan_theta_W',math.tan(theta_W))
+
+			dg1z		= RooFormulaVar('dg1z','dg1z','@0*@1*@1/2',RooArgList(ccw,Z_mass))
+			lZ		= RooFormulaVar('lZ','lZ','@0*@1*@1*@2*@2/2',RooArgList(cwww,g_weak,W_mass))
+			dkz		= RooFormulaVar('dkz','dkz','(@0-@1*@2*@2)*@3*@3/2',RooArgList(ccw,cb,tan_theta_W,W_mass))
+		'''
 
 	#no interference
 	if options.std:
@@ -977,10 +1008,10 @@ def make_input(ch = 'el', signal_cat = 'WW', binlo = 900, binhi = 3500):
 	w.pdf('STop_xww_%s_HP%s'%(ch,cat[1])).SetName('STop')
 	w.pdf('TTbar_xww_%s_HP%s'%(ch,cat[1])).SetName('TTbar')
 	w.pdf('WJets_xww_%s_HP%s'%(ch,cat[1])).SetName('WJets')
-	w.var('rrv_nevents_900_3500__VV_xww_%s'%ch).SetName('rate_VV')
-	w.var('rrv_nevents_900_3500__STop_xww_%s'%ch).SetName('rate_STop') 
-	w.var('rrv_nevents_900_3500__TTbar_xww_%s'%ch).SetName('rate_TTbar')
-	w.var('rrv_nevents_900_3500__WJets0_xww_%s'%ch).SetName('rate_WJets')
+	w.var('rrv_number_VV_xww_%s_mj_prefit_signal_region'%ch).SetName('rate_VV')
+	w.var('rrv_number_STop_xww_%s_mj_postfit_signal_region'%ch).SetName('rate_STop') 
+	w.var('ttbar_norm_signal_region_postfit').SetName('rate_TTbar')
+	w.var('rrv_number_WJets0_xww_%s_mj_postfit_signal_region'%ch).SetName('rate_WJets')
 	getattr(WS,'import')(w.pdf('STop'))
 	getattr(WS,'import')(w.pdf('TTbar'))
 	getattr(WS,'import')(w.pdf('WJets'))	
@@ -995,20 +1026,16 @@ def make_input(ch = 'el', signal_cat = 'WW', binlo = 900, binhi = 3500):
 
 	path	='%s/src/CombinedEWKAnalysis/CommonTools/data/anomalousCoupling'%os.environ["CMSSW_BASE"]
 	output 	= TFile('%s/%s.root'%(path,channel),'recreate')
-
-	data_obs_hist	= TH1F('data_obs_hist','data_obs_hist',binlo,binhi,nbins)
+	
+	data_obs_hist	= TH1F('data_obs_hist','data_obs_hist',nbins,binlo,binhi)
 	data_obs_tree	= TTree('data_obs_tree','data_obs_tree')
 	MWW_data	= array('f',[1])
 	data_obs_tree.Branch('observable',MWW_data,'observable')
-	if ch=='el':
-		METCUT	= 80.
-	elif ch=='mu':
-		METCUT	= 40.
-	else:
-		raise RuntimeError('no such channel %s'%ch)
+	data_obs_hist.Print("all")
+
 	for i in range(tree_data.GetEntries()):
 	  	tree_data.GetEntry(i)
-		if tree_data.Mjpruned<mj_hi and tree_data.Mjpruned>mj_lo:
+		if tree_data.Mjpruned<mj_hi and tree_data.Mjpruned>mj_lo and tree_data.MWW > binlo and tree_data.MWW < binhi:
 			MWW_data[0] = tree_data.MWW 
 			data_obs_tree.Fill()
 			data_obs_hist.Fill(MWW_data[0])
@@ -1082,11 +1109,9 @@ def make_input(ch = 'el', signal_cat = 'WW', binlo = 900, binhi = 3500):
 		pullhisttmp.SetLineColor(kRed)
 		pullhist2.Draw("SAME E1")
 
-
 		canvas.Update()
 		canvas.SaveAs('docuplots/atgc3_%s.pdf'%channel)
 		canvas.SaveAs('docuplots/atgc3_%s.png'%channel)
-			
 		
 		raw_input('cross check plot plotted')
 		canvas.Close()
