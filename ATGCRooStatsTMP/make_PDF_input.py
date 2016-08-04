@@ -354,27 +354,12 @@ def make_input(ch = 'el', signal_cat = 'WW', binlo = 900, binhi = 3500):
 	a1_4fit		= RooRealVar('a_SM_4fit_%s'%channel,'a_SM_4fit_%s'%channel,-0.1,-2,0)
 	a1		= RooFormulaVar('a_SM_%s'%channel,'a_SM_%s'%channel,'@0*@1',RooArgList(a1_4fit,eps))
 
-
-	if options.atgc:
-		#raise RuntimeError('not implemented yet')
-		
-		Z_mass		= RooRealVar('Z_mass','Z_mass',0.0911876)
-		W_mass		= RooRealVar('W_mass','W_mass',0.08385)
-		G_F		= RooRealVar('G_F','G_F',11.663787)
-		g_weak		= RooRealVar('g_weak','g_weak',math.sqrt((8*G_F.getVal()*W_mass.getVal()**2)/(math.sqrt(2))))
-		theta_W		= math.acos(W_mass.getVal()/Z_mass.getVal())
-		tan_theta_W 	= RooRealVar('tan_theta_W','tan_theta_W',math.tan(theta_W))
-
-		dg1z		= RooFormulaVar('dg1z','dg1z','@0*@1*@1/2',RooArgList(ccw,Z_mass))
-		lZ		= RooFormulaVar('lZ','lZ','@0*@1*@1*@2*@2/2',RooArgList(cwww,g_weak,W_mass))
-		dkz		= RooFormulaVar('dkz','dkz','(@0-@1*@2*@2)*@3*@3/2',RooArgList(ccw,cb,tan_theta_W,W_mass))
-	else:
-		cwww		= RooRealVar('cwww','cwww',0,-120,120);
-		ccw		= RooRealVar('ccw','ccw',0,-200,200);
-		cb		= RooRealVar('cb','cb',0,-600,600);
-		cwww.setConstant(kTRUE);
-		ccw.setConstant(kTRUE);
-		cb.setConstant(kTRUE);
+	cwww		= RooRealVar('cwww','cwww',0,-120,120);
+	ccw		= RooRealVar('ccw','ccw',0,-200,200);
+	cb		= RooRealVar('cb','cb',0,-600,600);
+	cwww.setConstant(kTRUE);
+	ccw.setConstant(kTRUE);
+	cb.setConstant(kTRUE);
 
 	##read workspace containing background pdfs
 	fileInWs	= TFile.Open('Input/wwlvj_%s_HP%s_workspace.root'%(ch[:2],cat[1]))
@@ -633,13 +618,13 @@ def make_input(ch = 'el', signal_cat = 'WW', binlo = 900, binhi = 3500):
 			N_quad		= RooRealVar('N_quad_%s_%s'%(POI[i],channel),'N_quad_%s_%s'%(POI[i],channel), ((N_pos_tmp+N_neg_tmp)/2)-N_SM.getVal() )
 		N_lin		= RooRealVar('N_lin_%s_%s'%(POI[i],channel),'N_lin_%s_%s'%(POI[i],channel), (N_pos_tmp-N_neg_tmp)/2 )
 
-		#scaleshape is the relative change to SM		
+		#scaleshape is the relative change to SM
 		scaleshape	= RooFormulaVar('scaleshape_%s_%s'%(POI[i],channel),'scaleshape_%s_%s'%(POI[i],channel),\
-						'(@0+@1*@3+@2*@3**2)-1',\
-						RooArgList(par0,par1,par2,wtmp.var(POI[i])))
+					'(@0+@1*@3+@2*@3**2)-1',\
+					RooArgList(par0,par1,par2,wtmp.var(POI[i])))
 		scaleshape4fit = RooFormulaVar('scaleshape4fit_%s_%s'%(POI[i],channel),'scaleshape4fit_%s_%s'%(POI[i],channel),\
-						'(@0+@1*@3+@2*@3**2)-1',\
-						RooArgList(par0_4fit,par1_4fit,par2_4fit,wtmp.var(POI[i])))			
+					'(@0+@1*@3+@2*@3**2)-1',\
+					RooArgList(par0_4fit,par1_4fit,par2_4fit,wtmp.var(POI[i])))			
 		if cat=='WWWV':
 			a2_4fit		= RooRealVar('a_quad_4fit_%s_%s'%(POI[i],channel),'a_quad_4fit_%s_%s'%(POI[i],channel),-0.0001,-0.1,0.)
 			a3_4fit		= RooRealVar('a_lin_4fit_%s_%s'%(POI[i],channel),'a_lin_4fit_%s_%s'%(POI[i],channel),-0.0001,-0.1,0.)
@@ -805,7 +790,6 @@ def make_input(ch = 'el', signal_cat = 'WW', binlo = 900, binhi = 3500):
 		N_ccw_cb	= RooRealVar('N_ccw_cb_%s'%channel,'N_ccw_cb_%s'%channel,\
 						cf*((N2060+NSM)-(N20+N60)))
 
-
 		paralist.add(RooArgList(wtmp.function('N_quad_%s_%s'%(POI[0],channel)),wtmp.var('cwww'),\
 					wtmp.function('N_quad_%s_%s'%(POI[1],channel)),wtmp.function('N_lin_%s_%s'%(POI[1],channel)),wtmp.var('ccw'),\
 					wtmp.function('N_quad_%s_%s'%(POI[2],channel)),wtmp.function('N_lin_%s_%s'%(POI[2],channel)),wtmp.var('cb')))
@@ -923,12 +907,67 @@ def make_input(ch = 'el', signal_cat = 'WW', binlo = 900, binhi = 3500):
 		if options.noSMint:
 			wtmp.var('N_lin_ccw_%s'%channel).setVal(0)
 			wtmp.var('N_lin_cb_%s'%channel).setVal(0)
+		if options.atgc:
+			#go from EFT parametrization to Lagrangian approach
+		
+			Z_mass		= 0.0911876
+			W_mass		= 0.080385
+			G_F		= 11.663787
+			g_weak		= math.sqrt((8*G_F*W_mass**2)/(math.sqrt(2)))
+			theta_W		= math.acos(W_mass/Z_mass)
+			tan_theta_W 	= math.tan(theta_W)
+			sin_theta_W	= math.sin(theta_W)
+	
+			coeff_cb1	= RooRealVar('coeff_cb1','coeff_cb1',2/(tan_theta_W*tan_theta_W*Z_mass*Z_mass))
+			coeff_cb2	= RooRealVar('coeff_cb2','coeff_cb2',2/(sin_theta_W*sin_theta_W*W_mass*W_mass))
+			coeff_ccw	= RooRealVar('coeff_ccw','coeff_ccw',2/Z_mass*Z_mass)
+			coeff_cwww	= RooRealVar('coeff_cwww','coeff_cwww',2/(3*g_weak*g_weak*W_mass*W_mass))
+	
+			dg1z		= RooRealVar('dg1z','dg1z',0,-1,1)
+			lZ		= RooRealVar('lZ','lZ',0,-1,1)
+			dkz		= RooRealVar('dkz','dkz',0,-1,1)
+			dg1z.setConstant(kTRUE)
+			lZ.setConstant(kTRUE)
+			dkz.setConstant(kTRUE)
 
-		model.Print()
-		getattr(WS,'import')(normfactor_3d)	
-		getattr(wtmp,'import')(normfactor_3d)
-		getattr(wtmp,'import')(normfactor_3d_4fit)
-		getattr(wtmp,'import')(model)
+			cwww		= RooFormulaVar('cwww_atgc','cwww_atgc','@0*@1',RooArgList(lZ,coeff_cwww))
+			ccw		= RooFormulaVar('ccw_atgc','ccw_atgc','@0*@1',RooArgList(dg1z,coeff_ccw))
+			cb		= RooFormulaVar('cb_atgc','cb_atgc','@0*@1-@2*@3',RooArgList(dg1z,coeff_cb1,dkz,coeff_cb2))
+			atgc_pars	= RooArgList(cwww,ccw,cb)
+			cwww.Print()
+			ccw.Print()
+			cb.Print()
+			N_list_atgc	= RooArgList()
+			scale_list_atgc = RooArgList()
+
+			for i in range(8):
+				customize_N	= RooCustomizer(N_list.at(i),'customize_N')
+				for j in range(3):
+					customize_N.replaceArg(wtmp.var(POI[j]),atgc_pars.at(j))
+				N_list_atgc.add(customize_N.build())
+				N_list_atgc.at(i).SetName(N_list.at(i).GetName())
+			model_atgc	= RooAddPdf('aTGC_model_%s'%channel,'aTGC_model_%s'%channel, Pdf_list, N_list_atgc)
+			for i in range(3):
+				customize_scale	= RooCustomizer(scale_list.at(i),'customize_scale')
+				for j in range(3):
+					customize_scale.replaceArg(wtmp.var(POI[j]),atgc_pars.at(j))
+				scale_list_atgc.add(customize_scale.build())
+				
+			normfactor_3d	= RooFormulaVar('normfactor_3d_%s'%channel,'normfactor_3d_%s'%channel,'1+@0+@1+@2',scale_list_atgc)
+		
+			getattr(wtmp,'import')(model_atgc)
+			getattr(WS,'import')(model_atgc)
+			getattr(wtmp,'import')(normfactor_3d,RooFit.RecycleConflictNodes())
+			getattr(WS,'import')(normfactor_3d,RooFit.RecycleConflictNodes())
+			WS.Print()
+			raw_input(channel)
+		else:
+			model.Print()
+			getattr(WS,'import')(normfactor_3d)	
+			getattr(wtmp,'import')(normfactor_3d)
+			getattr(wtmp,'import')(normfactor_3d_4fit)
+			getattr(wtmp,'import')(model)
+			getattr(WS,'import')(model)
 
 		
 		#print coefficients to see contribution for all atgc-parameter positive
@@ -943,21 +982,6 @@ def make_input(ch = 'el', signal_cat = 'WW', binlo = 900, binhi = 3500):
 
 		a5.Print()
 		a7.Print()
-		tmp='''
-		if options.atgc:
-			#raise RuntimeError('not implemented yet')
-			
-			Z_mass		= RooRealVar('Z_mass','Z_mass',0.0911876)
-			W_mass		= RooRealVar('W_mass','W_mass',0.08385)
-			G_F		= RooRealVar('G_F','G_F',11.663787)
-			g_weak		= RooRealVar('g_weak','g_weak',math.sqrt((8*G_F.getVal()*W_mass.getVal()**2)/(math.sqrt(2))))
-			theta_W		= math.acos(W_mass.getVal()/Z_mass.getVal())
-			tan_theta_W 	= RooRealVar('tan_theta_W','tan_theta_W',math.tan(theta_W))
-
-			dg1z		= RooFormulaVar('dg1z','dg1z','@0*@1*@1/2',RooArgList(ccw,Z_mass))
-			lZ		= RooFormulaVar('lZ','lZ','@0*@1*@1*@2*@2/2',RooArgList(cwww,g_weak,W_mass))
-			dkz		= RooFormulaVar('dkz','dkz','(@0-@1*@2*@2)*@3*@3/2',RooArgList(ccw,cb,tan_theta_W,W_mass))
-		'''
 
 	#no interference
 	if options.std:
@@ -1021,8 +1045,7 @@ def make_input(ch = 'el', signal_cat = 'WW', binlo = 900, binhi = 3500):
 	getattr(WS,'import')(w.var('rate_WJets'))
 
 
-	#import to workspace
-	getattr(WS,'import')(model)
+
 
 	path	='%s/src/CombinedEWKAnalysis/CommonTools/data/anomalousCoupling'%os.environ["CMSSW_BASE"]
 	output 	= TFile('%s/%s.root'%(path,channel),'recreate')
