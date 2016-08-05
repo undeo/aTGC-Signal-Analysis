@@ -30,6 +30,8 @@ if options.config is None:
     print 'Need to specify --config'
     exit(1)
         
+if options.binned:
+	raw_input("Will result in a binned fit! Press any key to continue")
 cfgparse.read(options.config)
 options.config = cfgparse # put the parsed config file into our options
 
@@ -127,6 +129,8 @@ for section in fit_sections:
       cat = "WW"
     elif check_channel.Contains("WZ"):
       cat = "WZ"
+    elif check_channel.Contains("WV"):
+      cat = "WV"
     if check_channel.Contains("_el"):
       ch = "el"
     elif check_channel.Contains("_mu"):
@@ -142,6 +146,8 @@ for section in fit_sections:
     old_obs = oldWS.var("rrv_mass_lvj")
     old_obs.setVal(2000)
     old_obs.setRange(900,3500)
+    bins=RooBinning(26,900,3500)
+    old_obs.setBinning(bins)
     old_obs.SetName("observable")
 
     
@@ -160,8 +166,6 @@ for section in fit_sections:
     for i in range(0,Nbkg_int):
         background.append(oldWS.pdf(bkg_name[i]))
 
-
-
     
     aTGCPdf = oldWS.pdf("aTGC_model_%s"%(codename))
     aTGCPdf.Print()
@@ -179,10 +183,6 @@ for section in fit_sections:
     bkgFits = {}
     for i in range(0,Nbkg_int):
         bkgFits[i] = oldWS.pdf(bkg_name[i])
-    #change norm_obs!!!
-    #norm_obs = data_obs.Integral()
-    norm_obs = 1
-    #@#
 
     theWS = RooWorkspace('proc_%s'%codename, 'proc_%s'%codename)
     
@@ -206,6 +206,7 @@ for section in fit_sections:
 		raise RuntimeError("data_obs hat to be TTree!")
     	data 		= RooDataSet('data_obs', 'data_obs_proc_%s'%codename, data_obs, varSet)
 	
+    #norm_obs = data_obs.Integral()
 
     getattr(theWS, 'import')(data)
     for i in range(0,Nbkg_int):
