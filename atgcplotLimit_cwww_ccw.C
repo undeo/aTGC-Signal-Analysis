@@ -1065,16 +1065,16 @@ void atgcplotLimit_cwww_ccw()
   vector<TString> fnames;
   //getFileNames(fileglob, fnames);
 
-  //fnames.push_back("higgsCombine2Par_cwww0_ccw0_exp.MultiDimFit.mH120.root");
-  //fnames.push_back("higgsCombine2Par_cwww0_ccw0_obs.MultiDimFit.mH120.root");
-  //fnames.push_back("higgsCombine2Par_cwww0_ccw0_exp_no_uncert.MultiDimFit.mH120.root");
-  //fnames.push_back("higgsCombine2Par_cwww0_ccw0_obs_no_uncert.MultiDimFit.mH120.root");
+  fnames.push_back("higgsCombine2Par_cwww0_ccw0_exp.MultiDimFit.mH120.root");
+  fnames.push_back("higgsCombine2Par_cwww0_ccw0_obs.MultiDimFit.mH120.root");
+  //fnames.push_back("higgsCombine2Par_cwww0_ccw0_exp_nouncert.MultiDimFit.mH120.root");
+  //fnames.push_back("higgsCombine2Par_cwww0_ccw0_obs_nouncert.MultiDimFit.mH120.root");
   //fnames.push_back("higgsCombine2Par_cwww0_ccw0_exp_WW.MultiDimFit.mH120.root");
   //fnames.push_back("higgsCombine2Par_cwww0_ccw0_obs_WW.MultiDimFit.mH120.root");
   //fnames.push_back("higgsCombine2Par_cwww0_ccw0_exp_WZ.MultiDimFit.mH120.root");
   //fnames.push_back("higgsCombine2Par_cwww0_ccw0_obs_WZ.MultiDimFit.mH120.root");
-  fnames.push_back("higgsCombine2Par_cwww0_ccw0_exp_WV.MultiDimFit.mH120.root");
-  fnames.push_back("higgsCombine2Par_cwww0_ccw0_obs_WV.MultiDimFit.mH120.root");
+  //fnames.push_back("higgsCombine2Par_cwww0_ccw0_exp_WV.MultiDimFit.mH120.root");
+  //fnames.push_back("higgsCombine2Par_cwww0_ccw0_obs_WV.MultiDimFit.mH120.root");
   //fnames.push_back("higgsCombine2Par_cwww0_ccw0_exp_noatgcint.MultiDimFit.mH120.root");
   //fnames.push_back("higgsCombine2Par_cwww0_ccw0_obs_noatgcint.MultiDimFit.mH120.root");
   //fnames.push_back("higgsCombine2Par_cwww0_ccw0_exp_noSMint.MultiDimFit.mH120.root");

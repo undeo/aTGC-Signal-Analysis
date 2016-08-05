@@ -39,6 +39,9 @@ TString par2latex(const TString& parname)
   if (parname.EqualTo("cwww") )  return "c_{WWW}/#Lambda^{2} (TeV^{-2})";
   if (parname.EqualTo("ccw") ) return "c_{W}/#Lambda^{2} (TeV^{-2})";
   if (parname.EqualTo("cb") ) return "c_{B}/#Lambda^{2} (TeV^{-2})";
+  if (parname.EqualTo("dg1z") ) return "#Deltag_{1}^{Z}";
+  if (parname.EqualTo("dkz") ) return "#Delta#kappa_{Z}";
+  if (parname.EqualTo("lZ") ) return "#lambda_{Z}";
 
   return "UNKNOWN PAR "+parname;
 }
@@ -50,6 +53,9 @@ float parmin(const TString& parname)
   if (parname.EqualTo("cwww") )  return -20;
   if (parname.EqualTo("ccw") ) return -20;
   if (parname.EqualTo("cb") ) return -105;
+  if (parname.EqualTo("dg1z") ) return -0.1;
+  if (parname.EqualTo("dkz") ) return -0.1;
+  if (parname.EqualTo("lZ") ) return -0.05;
 
   return -999;
 }
@@ -59,8 +65,12 @@ float parmin(const TString& parname)
 float parmax(const TString& parname)
 {
   if (parname.EqualTo("cwww") )  return 20;
-  if (parname.EqualTo("ccw") ) return 20;
-  if (parname.EqualTo("cb") ) return 175;
+  if (parname.EqualTo("ccw") ) return 35;
+  if (parname.EqualTo("cb") ) return 150;
+  if (parname.EqualTo("dg1z") ) return 0.15;
+  if (parname.EqualTo("dkz") ) return 0.1;
+  if (parname.EqualTo("lZ") ) return 0.05;
+
 
   return -999;
 }
@@ -72,6 +82,9 @@ float parinc(const TString& parname)
   if (parname.EqualTo("cwww") )  return 0.4;
   if (parname.EqualTo("ccw") ) return 0.6;
   if (parname.EqualTo("cb") ) return 1.2;
+  if (parname.EqualTo("dg1z") ) return 0.0002;
+  if (parname.EqualTo("dkz") ) return 0.0002;
+  if (parname.EqualTo("lZ") ) return 0.0002;
 
   return -999;
 }
@@ -809,7 +822,6 @@ draw2DLimitContours(map<string,TList *>& m_contours,
   legend->AddEntry(SMpoint,"SM","P");
   TGraph *bestfit = new TGraph(1);
   bestfit->SetPoint(1,par1_bestfit,par2_bestfit);
-  std::cout<<par1_bestfit<<" , "<<par2_bestfit<<std::endl;
   bestfit->Draw("SAME *");
   legend->AddEntry(bestfit,"Best fit value","P");
   
@@ -1057,7 +1069,7 @@ draw1DLimit(map<string,TGraph2D *> m_graphs,
 // to plot only expected limit, just omit the observed limit file from
 // the fileglob
 
-void atgcplotLimit_ccw_cb()
+void atgcplotLimit_lZ_dg1z()
 {
   atgcstyle();
 
@@ -1066,37 +1078,27 @@ void atgcplotLimit_ccw_cb()
   vector<TString> fnames;
   //getFileNames(fileglob, fnames);
 
-  fnames.push_back("higgsCombine2Par_ccw0_cb0_exp.MultiDimFit.mH120.root");
-  fnames.push_back("higgsCombine2Par_ccw0_cb0_obs.MultiDimFit.mH120.root");
-  //fnames.push_back("higgsCombine2Par_ccw0_cb0_exp_nouncert.MultiDimFit.mH120.root");
-  //fnames.push_back("higgsCombine2Par_ccw0_cb0_obs_nouncert.MultiDimFit.mH120.root");
-  //fnames.push_back("higgsCombine2Par_ccw0_cb0_exp_WW.MultiDimFit.mH120.root");
-  //fnames.push_back("higgsCombine2Par_ccw0_cb0_obs_WW.MultiDimFit.mH120.root");
-  //fnames.push_back("higgsCombine2Par_ccw0_cb0_exp_WZ.MultiDimFit.mH120.root");
-  //fnames.push_back("higgsCombine2Par_ccw0_cb0_obs_WZ.MultiDimFit.mH120.root");
-  //fnames.push_back("higgsCombine2Par_ccw0_cb0_exp_WV.MultiDimFit.mH120.root");
-  //fnames.push_back("higgsCombine2Par_ccw0_cb0_obs_WV.MultiDimFit.mH120.root");
-  //fnames.push_back("higgsCombine2Par_ccw0_cb0_exp_noatgcint.MultiDimFit.mH120.root");
-  //fnames.push_back("higgsCombine2Par_ccw0_cb0_obs_noatgcint.MultiDimFit.mH120.root");
-  //fnames.push_back("higgsCombine2Par_ccw0_cb0_exp_noSMint.MultiDimFit.mH120.root");
-  //fnames.push_back("higgsCombine2Par_ccw0_cb0_obs_noSMint.MultiDimFit.mH120.root");
+  TString   par1;
+  TString   par2;
+  par1 = TString("lZ");
+  par2 = TString("dg1z");
+
+  fnames.push_back("higgsCombine2Par_"+par1+"0_"+par2+"0_exp.MultiDimFit.mH120.root");
+  fnames.push_back("higgsCombine2Par_"+par1+"0_"+par2+"0_obs.MultiDimFit.mH120.root");
 
   assert(fnames.size());
 
-  TString   par1;
-  TString   par2;
-  par1 = TString("ccw");
-  par2 = TString("cb");
 
+
+  
   float par1_bestfit	= 0;
   float par2_bestfit	= 0;
   TTree * tree	= (TTree*)TFile::Open(fnames[1])->Get("limit");
   tree->SetBranchAddress(par1, &par1_bestfit);
   tree->SetBranchAddress(par2, &par2_bestfit);
-  tree->GetEntry(0);    
- 
+  tree->GetEntry(0); 
 
- 
+
 
   if (!par1.Length() || !par2.Length() ) {
     cerr << "Unknown coupling parameters in name " << fnames[0] << endl;
