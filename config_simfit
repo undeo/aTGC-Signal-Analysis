@@ -1,0 +1,118 @@
+[Global]
+NlnN=13
+lnN1_name	=lumi_13TeV
+lnN1_value	=1.027,1.027,1.027,1.027,1.027,1.027,1.027,1.027,1.027,1.027,1.027,1.027,1.027,1.027,1.027,1.027,1.027,1.027,1.027,1.027,1.027,1.027,1.027,1.027
+lnN1_for	=WW_sig_el_TTbar,WZ_sig_el_TTbar,sb_lo_el_TTbar,sb_hi_el_TTbar,WW_sig_el_STop,WZ_sig_el_STop,sb_lo_el_STop,sb_hi_el_STop,WW_sig_el_signal,WZ_sig_el_signal,sb_lo_el_signal,sb_hi_el_signal,WW_sig_mu_TTbar,WZ_sig_mu_TTbar,sb_lo_mu_TTbar,sb_hi_mu_TTbar,WW_sig_mu_STop,WZ_sig_mu_STop,sb_lo_mu_STop,sb_hi_mu_STop,WW_sig_mu_signal,WZ_sig_mu_signal,sb_lo_mu_signal,sb_hi_mu_signal
+#
+lnN2_name	=CMS_eff_vtag_tau21_sf_13TeV
+lnN2_value	=1.120,1.120,1.120,1.120,1.120,1.120,1.120,1.120,1.120,1.120,1.120,1.120,1.120,1.120,1.120,1.120,1.120,1.120,1.120,1.120,1.120,1.120,1.120,1.120
+lnN2_for	=WW_sig_el_TTbar,WZ_sig_el_TTbar,sb_lo_el_TTbar,sb_hi_el_TTbar,WW_sig_el_STop,WZ_sig_el_STop,sb_lo_el_STop,sb_hi_el_STop,WW_sig_el_signal,WZ_sig_el_signal,sb_lo_el_signal,sb_hi_el_signal,WW_sig_mu_TTbar,WZ_sig_mu_TTbar,sb_lo_mu_TTbar,sb_hi_mu_TTbar,WW_sig_mu_STop,WZ_sig_mu_STop,sb_lo_mu_STop,sb_hi_mu_STop,WW_sig_mu_signal,WZ_sig_mu_signal,sb_lo_mu_signal,sb_hi_mu_signal
+#
+lnN3_name	=CMS_eff_b
+lnN3_value	=1.008,1.008,1.008,1.008,1.008,1.008,1.008,1.008
+lnN3_for	=WW_sig_el_TTbar,WZ_sig_el_TTbar,sb_lo_el_TTbar,sb_hi_el_TTbar,WW_sig_mu_TTbar,WZ_sig_mu_TTbar,sb_lo_mu_TTbar,sb_hi_mu_TTbar
+#
+lnN4_name	=CMS_scale_j
+lnN4_value	=0.976/1.024,1.024/0.976,0.972/1.028,1.028/0.972,0.984/1.016,1.016/0.984,0.977/1.023,1.023/0.977,0.974/1.026,1.026/0.974,0.994/1.006,1.006/0.994		
+lnN4_for	=WW_sig_el_signal,WZ_sig_el_signal,WW_sig_el_TTbar,WZ_sig_el_TTbar,WW_sig_el_STop,WZ_sig_el_STop,WW_sig_mu_signal,WZ_sig_mu_signal,WW_sig_mu_TTbar,WZ_sig_mu_TTbar,WW_sig_mu_STop,WZ_sig_mu_STop
+#
+lnN5_name	=CMS_res_j
+lnN5_value	=1.001,1.001,1.001,1.001
+lnN5_for	=WW_sig_mu_STop,WZ_sig_mu_STop,sb_lo_mu_STop,sb_hi_mu_STop
+#
+lnN6_name	=CMS_scale_e
+lnN6_value	=1.006,1.006,1.006,1.006,0.995,0.995,0.995,0.995
+lnN6_for	=WW_sig_el_signal,WZ_sig_el_signal,sb_lo_el_signal,sb_hi_el_signal,WW_sig_el_STop,WZ_sig_el_STop,sb_lo_el_STop,sb_hi_el_STop
+#
+lnN7_name	=CMS_scale_m
+lnN7_value	=1.017,1.017,1.017,1.017,1.016,1.016,1.016,1.016,1.019,1.019,1.019,1.019
+lnN7_for	=WW_sig_mu_signal,WZ_sig_mu_signal,sb_lo_mu_signal,sb_hi_mu_signal,WW_sig_mu_TTbar,WZ_sig_mu_TTbar,sb_lo_mu_TTbar,sb_hi_mu_TTbar,WW_sig_mu_STop,WZ_sig_mu_STop,sb_lo_mu_STop,sb_hi_mu_STop
+#
+lnN8_name	=pdf_qqbar
+lnN8_value	=1.025,1.025,1.025,1.025,1.025,1.025,1.025,1.025,1.003,1.003,1.003,1.003,1.023,1.023,1.023,1.023,1.026,1.026,1.026,1.026,1.004,1.004,1.004,1.004
+lnN8_for	=WW_sig_el_signal,WZ_sig_el_signal,sb_lo_el_signal,sb_hi_el_signal,WW_sig_el_TTbar,WZ_sig_el_TTbar,sb_lo_el_TTbar,sb_hi_el_TTbar,WW_sig_el_STop,WZ_sig_el_STop,sb_lo_el_STop,sb_hi_el_STop,WW_sig_mu_signal,WZ_sig_mu_signal,sb_lo_mu_signal,sb_hi_mu_signal,WW_sig_mu_TTbar,WZ_sig_mu_TTbar,sb_lo_mu_TTbar,sb_hi_mu_TTbar,WW_sig_mu_STop,WZ_sig_mu_STop,sb_lo_mu_STop,sb_hi_mu_STop
+#
+lnN9_name	=QCDscale_VV
+lnN9_value	=1.060,1.060,1.060,1.060,1.060,1.060,1.060,1.060
+lnN9_for	=WW_sig_el_signal,WZ_sig_el_signal,sb_lo_el_signal,sb_hi_el_signal,WW_sig_mu_signal,WZ_sig_mu_signal,sb_lo_mu_signal,sb_hi_mu_signal
+#
+lnN10_name	=QCDscale_TTbar
+lnN10_value	=1.187,1.187,1.187,1.187,1.020,1.020,1.020,1.020,1.192,1.192,1.192,1.192,1.020,1.020,1.020,1.020
+lnN10_for	=WW_sig_el_TTbar,WZ_sig_el_TTbar,sb_lo_el_TTbar,sb_hi_el_TTbar,WW_sig_el_STop,WZ_sig_el_STop,sb_lo_el_STop,sb_hi_el_STop,WW_sig_mu_TTbar,WZ_sig_mu_TTbar,sb_lo_mu_TTbar,sb_hi_mu_TTbar,WW_sig_mu_STop,WZ_sig_mu_STop,sb_lo_mu_STop,sb_hi_mu_STop
+#
+lnN11_name	=CMS_scale_met
+lnN11_value	=1.006,1.006,1.006,1.006,1.005,1.005,1.005,1.005,1.012,1.012,1.012,1.012,1.003,1.003,1.003,1.003,1.001,1.001,1.001,1.001,0.995,0.995,0.995,0.995
+lnN11_for	=WW_sig_el_signal,WZ_sig_el_signal,sb_lo_el_signal,sb_hi_el_signal,WW_sig_el_TTbar,WZ_sig_el_TTbar,sb_lo_el_TTbar,sb_hi_el_TTbar,WW_sig_el_STop,WZ_sig_el_STop,sb_lo_el_STop,sb_hi_el_STop,WW_sig_mu_signal,WZ_sig_mu_signal,sb_lo_mu_signal,sb_hi_mu_signal,WW_sig_mu_TTbar,WZ_sig_mu_TTbar,sb_lo_mu_TTbar,sb_hi_mu_TTbar,WW_sig_mu_STop,WZ_sig_mu_STop,sb_lo_mu_STop,sb_hi_mu_STop
+#
+lnN12_name	=CMS_eff_e
+lnN12_value	=1.010,1.010,1.010,1.010,1.010,1.010,1.010,1.010,1.010,1.010,1.010,1.010
+lnN12_for	=WW_sig_el_signal,WZ_sig_el_signal,sb_lo_el_signal,sb_hi_el_signal,WW_sig_el_TTbar,WZ_sig_el_TTbar,sb_lo_el_TTbar,sb_hi_el_TTbar,WW_sig_el_STop,WZ_sig_el_STop,sb_lo_el_STop,sb_hi_el_STop
+#
+lnN13_name	=CMS_eff_m
+lnN13_value	=1.023,1.023,1.023,1.023,1.021,1.021,1.021,1.021,1.022,1.022,1.022,1.022
+lnN13_for	=WW_sig_mu_signal,WZ_sig_mu_signal,sb_lo_mu_signal,sb_hi_mu_signal,WW_sig_mu_TTbar,WZ_sig_mu_TTbar,sb_lo_mu_TTbar,sb_hi_mu_TTbar,WW_sig_mu_STop,WZ_sig_mu_STop,sb_lo_mu_STop,sb_hi_mu_STop
+
+
+model=par1par2par3_TF3
+par1Name = cwww
+par1Low = -24
+par1High = 24
+par2Name = ccw
+par2Low = -40
+par2High = 40
+par3Name = cb
+par3Low = -75
+par3High = 75
+
+[WW_sig_el]
+Nbkg=3
+bkg1_name=TTbar
+bkg2_name=STop
+bkg3_name=WJets
+
+[sb_lo_el]
+Nbkg=3
+bkg1_name=TTbar
+bkg2_name=STop
+bkg3_name=WJets
+
+[sb_hi_el]
+Nbkg=3
+bkg1_name=TTbar
+bkg2_name=STop
+bkg3_name=WJets
+
+[WZ_sig_el]
+Nbkg=3
+bkg1_name=TTbar
+bkg2_name=STop
+bkg3_name=WJets
+
+[WZ_sig_mu]
+Nbkg=3
+bkg1_name=TTbar
+bkg2_name=STop
+bkg3_name=WJets
+
+[WW_sig_mu]
+Nbkg=3
+bkg1_name=TTbar
+bkg2_name=STop
+bkg3_name=WJets
+
+[sb_lo_mu]
+Nbkg=3
+bkg1_name=TTbar
+bkg2_name=STop
+bkg3_name=WJets
+
+[sb_hi_mu]
+Nbkg=3
+bkg1_name=TTbar
+bkg2_name=STop
+bkg3_name=WJets
+
+
+
+
+
